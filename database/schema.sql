@@ -1,3 +1,6 @@
+-- Esquema SQL para la base de datos de la aplicación, definiendo las tablas necesarias para 
+-- usuarios, géneros, plataformas, juegos y favoritos, con sus respectivas relaciones y restricciones.
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
