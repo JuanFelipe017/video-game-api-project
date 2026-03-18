@@ -1,0 +1,135 @@
+/*   RESPONSIVE — GameHub
+   Breakpoints: 1100 → 900 → 768 → 600 → 480 */
+
+/* 1100px */
+@media (max-width: 1100px) {
+    .games-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* 900px  */
+@media (max-width: 900px) {
+    .search-bar input {
+        width: 240px;
+    }
+
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 768px */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    .hero {
+        height: 300px;
+    }
+
+    .section {
+        margin-top: 24px;
+    }
+
+    /* Auth cards (login / register) */
+    .auth-card {
+        padding: 28px 20px;
+    }
+}
+
+/*  600px  */
+@media (max-width: 600px) {
+
+    .header-inner {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+    }
+
+    .logo {
+        justify-content: center;
+    }
+
+    .search-bar {
+        width: 100%;
+    }
+
+    .search-bar input {
+        width: 100%;
+    }
+
+    nav {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    main {
+        padding: 20px 16px 60px 16px;
+    }
+
+    .hero {
+        height: auto;
+        padding: 40px 20px;
+    }
+
+    .hero h1 {
+        font-size: 24px;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    #toast-container {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+    }
+
+    .toast {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+/* 480px */
+@media (max-width: 480px) {
+
+    .games-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 22px;
+    }
+
+    .overlay-buttons {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .overlay-buttons .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .auth-card {
+        padding: 24px 16px;
+        border-radius: 8px;
+    }
+
+    .auth-wrapper {
+        padding: 20px 12px;
+        align-items: flex-start;
+        padding-top: 40px;
+    }
+}
