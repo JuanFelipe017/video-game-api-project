@@ -1,5 +1,10 @@
+# Requerimientos para el backend de la aplicación, incluyendo FastAPI para la API, Uvicorn como servidor ASGI, 
+# psycopg2 para conectar con PostgreSQL, python-dotenv para manejar variables de entorno, 
+# requests para hacer llamadas HTTP a la API de RAWG, y bcrypt para el hashing de contraseñas.
+
 fastapi
 uvicorn
 psycopg2-binary
 python-dotenv
 requests
+bycrypt
