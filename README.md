@@ -8,8 +8,9 @@ Plataforma web para descubrir, explorar y guardar videojuegos favoritos. Consume
 
 | Integrante | Responsabilidad |
 |---|---|
-| Juan Felipe Vanegas Silva | Backend — FastAPI, endpoints, servicios / Frontend — HTML, CSS, JavaScript|
-| Diego Felipe Almanza Ruiz | Base de datos — PostgreSQL, GCP Cloud SQL, esquemas |
+| Juan Felipe Vanegas Silva | Backend — FastAPI, endpoints, servicios / Frontend — JavaScript|
+| Diego Felipe Almanza Ruiz | Base de datos — PostgreSQL, GCP Cloud SQL, esquemas / Frontend — HTML|
+| Dayana Michelle Pulido Moguea | GCP Cloud SQL, esquemas / Frontend — CSS|
 
 ---
 
