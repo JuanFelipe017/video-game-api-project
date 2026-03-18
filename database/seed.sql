@@ -1,4 +1,7 @@
--- optimizado para consultas de juegos por rating, fecha de lanzamiento y nombre
+-- Índice de la base de datos para mejorar el rendimiento de las consultas más comunes, 
+-- como buscar juegos por rating, fecha de lanzamiento o nombre, 
+-- y para optimizar las consultas relacionadas con los favoritos y las relaciones entre juegos, géneros y plataformas.
+
 CREATE INDEX idx_games_rating ON games(rating DESC);
 CREATE INDEX idx_games_released ON games(released DESC);
 CREATE INDEX idx_games_name ON games(name);

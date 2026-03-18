@@ -52,5 +52,3 @@ CREATE TABLE favorites (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, game_id)
 );
-
-CREATE
