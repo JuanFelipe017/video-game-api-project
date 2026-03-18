@@ -78,7 +78,6 @@ Plataforma web para descubrir, explorar y guardar videojuegos favoritos. Consume
 │  - platforms    │
 └─────────────────┘
 ```
-
 ---
 
 ## 💻 Instalación local
