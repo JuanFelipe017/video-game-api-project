@@ -1,5 +1,4 @@
-// URL base de tu backend — cambia esto cuando lo despliegues en GCP
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "https://gamehub-backend-556939640766.us-central1.run.app/api";
 
 /**
  * Función genérica para llamar a tu API.
