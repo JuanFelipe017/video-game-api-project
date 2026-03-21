@@ -1,0 +1,189 @@
+/*   RESPONSIVE — GameHub
+   Breakpoints: 1100 → 900 → 768 → 600 → 480 */
+
+/* 1100px */
+@media (max-width: 1100px) {
+    .games-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* 900px  */
+@media (max-width: 900px) {
+    .search-bar input {
+        width: 240px;
+    }
+
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 768px */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    .hero {
+        height: 300px;
+    }
+
+    .section {
+        margin-top: 24px;
+    }
+
+    /* Auth cards (login / register) */
+    .auth-card {
+        padding: 28px 20px;
+    }
+}
+
+/*  600px  */
+@media (max-width: 600px) {
+
+    .header-inner {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+    }
+
+    .logo {
+        justify-content: center;
+    }
+
+    .search-bar {
+        width: 100%;
+    }
+
+    .search-bar input {
+        width: 100%;
+    }
+
+    nav {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    main {
+        padding: 20px 16px 60px 16px;
+    }
+
+    .hero {
+        height: auto;
+        padding: 40px 20px;
+    }
+
+    .hero h1 {
+        font-size: 24px;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    #toast-container {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+    }
+
+    .toast {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+/* 480px */
+@media (max-width: 480px) {
+
+    .games-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 22px;
+    }
+
+    .overlay-buttons {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .overlay-buttons .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .auth-card {
+        padding: 24px 16px;
+        border-radius: 8px;
+    }
+
+    .auth-wrapper {
+        padding: 20px 12px;
+        align-items: flex-start;
+        padding-top: 40px;
+    }
+}
+
+/* 430px */
+@media (max-width: 430px) {
+
+    .header-inner {
+        grid-template-columns: auto 1fr auto;
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .search-bar input {
+        width: 100%;
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+
+    nav a {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    .auth-wrapper {
+        align-items: flex-start;
+        padding: 20px 16px;
+        padding-top: 30px;
+        min-height: calc(100vh - 55px);
+        background-position: center top;
+    }
+
+    .auth-card {
+        padding: 28px 20px;
+        max-width: 100%;
+        border-radius: 10px;
+    }
+
+    .auth-card h2 {
+        font-size: 20px;
+    }
+
+    /* Toast centrado en la parte inferior */
+    #toast-container {
+        bottom: 16px;
+        right: 50%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+    }
+
+    .toast {
+        min-width: unset;
+        width: 100%;
+        font-size: 13px;
+    }
+}

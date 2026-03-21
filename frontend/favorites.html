@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GameHub — Mis Favoritos</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/toast.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path
+                            d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5S14.67 12 15.5 12s1.5.67 1.5 1.5S16.33 15 15.5 15zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 10 18.5 10s1.5.67 1.5 1.5S19.33 12 18.5 12z" />
+                    </svg>
+                </div>
+                GameHub
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Buscar juegos..."
+                    onkeydown="if(event.key==='Enter' && this.value.trim()) window.location.href='games.html?search='+encodeURIComponent(this.value.trim())">
+            </div>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="games.html">Explorar</a>
+                <a href="#" onclick="handleLogout()">Cerrar sesión</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="section">
+            <h2 id="favorites-title">Mis favoritos</h2>
+
+            <!-- Mensaje cuando no hay favoritos -->
+            <div id="empty-msg" style="display:none; text-align:center; padding: 60px 20px;">
+                <p style="font-size:48px; margin-bottom:16px;">🎮</p>
+                <p style="font-size:18px; color:#aaa; margin-bottom:20px;">
+                    Aún no tienes juegos favoritos.
+                </p>
+                <a href="games.html" class="btn btn-green" style="padding:12px 28px; font-size:15px;">
+                    Explorar juegos
+                </a>
+            </div>
+
+            <div class="games-grid" id="favorites-container"></div>
+        </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/favorites.js"></script>
+</body>
+
+</html>

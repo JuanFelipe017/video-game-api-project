@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GameHub — Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <style>
+        .auth-wrapper {
+            min-height: calc(100vh - 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            background: linear-gradient(rgba(0, 0, 0, 0.70), rgba(0, 0, 0, 0.70)),
+                url("assets/gaming-background.png");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .auth-card {
+            background: #1c1c1c;
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .auth-card h2 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+        }
+
+        .auth-card p.subtitle {
+            color: #aaa;
+            margin: 0 0 28px 0;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 11px 14px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #018d1f;
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .auth-footer a {
+            color: #018d1f;
+            text-decoration: none;
+        }
+
+        .error-msg {
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path
+                            d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5S14.67 12 15.5 12s1.5.67 1.5 1.5S16.33 15 15.5 15zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 10 18.5 10s1.5.67 1.5 1.5S19.33 12 18.5 12z" />
+                    </svg>
+                </div>
+                GameHub
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Buscar juegos...">
+            </div>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="games.html">Explorar</a>
+                <a href="register.html">Registrarse</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <h2>Iniciar sesión</h2>
+            <p class="subtitle">Bienvenido de vuelta a GameHub</p>
+
+            <div class="error-msg" id="error-msg"></div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="tu@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+
+            <button class="btn btn-green btn-full" id="login-btn">Iniciar sesión</button>
+
+            <div class="auth-footer">
+                ¿No tienes cuenta? <a href="register.html">Regístrate</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Si ya está logueado, redirigir al inicio
+        if (isLoggedIn()) window.location.href = "index.html";
+
+        const loginBtn = document.getElementById("login-btn");
+        const errorMsg = document.getElementById("error-msg");
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = "block";
+        }
+
+        loginBtn.addEventListener("click", async () => {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+
+            if (!email || !password) {
+                showError("Por favor completa todos los campos.");
+                return;
+            }
+
+            loginBtn.textContent = "Ingresando...";
+            loginBtn.disabled = true;
+
+            const result = await handleLogin(email, password);
+
+            if (result.ok) {
+                window.location.href = "index.html";
+            } else {
+                showError(result.message);
+                loginBtn.textContent = "Iniciar sesión";
+                loginBtn.disabled = false;
+            }
+        });
+
+        // También funciona con Enter
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") loginBtn.click();
+        });
+    </script>
+</body>
+
+</html>
