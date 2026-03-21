@@ -12,27 +12,39 @@
 
 <body>
     <!-- HEADER -->
-    <header>
-        <div class="header-inner">
-            <div class="logo">
-                <div class="logo-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                        <path
-                            d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5S14.67 12 15.5 12s1.5.67 1.5 1.5S16.33 15 15.5 15zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 10 18.5 10s1.5.67 1.5 1.5S19.33 12 18.5 12z" />
-                    </svg>
-                </div>
-                GameHub
+<header>
+    <div class="header-inner">
+        
+        <div class="logo">
+            <div class="logo-icon">
             </div>
-            <div class="search-bar">
-                <input type="text" id="search-input" placeholder="Buscar juegos...">
-            </div>
-            <nav>
-                <a href="games.html">Explorar</a>
-                <a href="favorites.html" id="nav-favorites">Favoritos</a>
-                <a href="login.html" id="nav-login">Login</a>
-            </nav>
+            GameHub
         </div>
-    </header>
+
+        <div class="search-bar">
+            <input type="text" placeholder="Buscar juegos...">
+        </div>
+
+        <div class="hamburger" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+
+        <nav>
+            index.htmlHome</a>
+            games.htmlExplorar</a>
+            favorites.htmlFavoritos</a>
+            login.htmlLogin</a>
+        </nav>
+
+    </div>
+
+    <div id="mobile-menu" class="mobile-nav">
+        index.htmlHome</a>
+        games.htmlExplorar</a>
+        favorites.htmlFavoritos</a>
+        login.htmlLogin</a>
+    </div>
+</header>
 
     <main>
         <!-- HERO -->
