@@ -99,7 +99,7 @@ cd proyecto-desarrollo
 
 ```bash
 cd backend
-pip install fastapi uvicorn requests psycopg2-binary python-dotenv bcrypt
+pip install -r requirements.txt
 ```
 
 Crear el archivo `backend/.env`:
