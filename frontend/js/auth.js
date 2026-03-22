@@ -64,3 +64,67 @@ function requireAuth() {
         window.location.href = "login.html";
     }
 }
+
+// Perfil: Si hay sesión, muestra un dropdown con el nombre de usuario, email y un enlace a favoritos. 
+
+
+async function buildProfileDropdown() {
+    const userId = localStorage.getItem("user_id");
+    const username = localStorage.getItem("username");
+    if (!userId || !username) return;
+
+    // Contar favoritos
+    let favCount = 0;
+    try {
+        const favs = await fetchFavorites(userId);
+        favCount = favs.length;
+    } catch (e) {
+        favCount = "—";
+    }
+
+    const navAuth = document.getElementById("nav-auth");
+    if (!navAuth) return;
+
+    navAuth.innerHTML = `
+        <div class="profile-btn" id="profile-btn">
+            <div class="profile-avatar">${username.charAt(0).toUpperCase()}</div>
+            <span class="profile-username">${username}</span>
+            <span class="profile-arrow">▾</span>
+        </div>
+        <div class="profile-dropdown" id="profile-dropdown">
+            <div class="profile-dropdown-header">
+                <div class="profile-avatar-lg">${username.charAt(0).toUpperCase()}</div>
+                <div>
+                    <div class="profile-name">${username}</div>
+                    <div class="profile-email">${localStorage.getItem("email")}</div>
+                </div>
+            </div>
+            <div class="profile-dropdown-divider"></div>
+            <a href="favorites.html" class="profile-dropdown-item">
+                ⭐ Favoritos
+                <span class="fav-count">${favCount}</span>
+            </a>
+            <div class="profile-dropdown-divider"></div>
+            <button class="profile-dropdown-item profile-logout" onclick="handleLogout()">
+                🚪 Cerrar sesión
+            </button>
+        </div>
+    `;
+
+    // Toggle dropdown
+    const btn = document.getElementById("profile-btn");
+    const dropdown = document.getElementById("profile-dropdown");
+
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle("open");
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener("click", () => {
+        dropdown.classList.remove("open");
+    });
+}
+
+// Llamar al cargar si hay sesión
+if (isLoggedIn()) buildProfileDropdown();
