@@ -13,5 +13,8 @@ def add_favorite(user_id: int, game_id: int) -> dict:
     return {"ok": True, "favorite": result}
 
 # Elimina un favorito por su ID, devolviendo True si se eliminó o False si no se encontró
-def remove_favorite(favorite_id: int) -> bool:
-    return favorites_service.remove_favorite(favorite_id)
+def remove_favorite(user_id: int, game_id: int) -> bool:
+    result = favorites_service.remove_favorite(user_id, game_id)
+    if not result:
+        return {"error": "El juego no está en favoritos"}
+    return {"ok": True, "favorite": result , "msg": "Juego eliminado de favoritos"}

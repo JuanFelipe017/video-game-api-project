@@ -63,13 +63,17 @@ def add_favorite(user_id: int, game_id: int) -> dict | None:
         conn.close()
 
 # Elimina un favorito por su ID, devuelve True si se eliminó, False si no se encontró
-def remove_favorite(favorite_id: int) -> bool:
+def remove_favorite(user_id: int, game_id: int) -> bool:
     conn = get_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "DELETE FROM favorites WHERE id = %s RETURNING id",
-                (favorite_id,)
+                """
+                DELETE FROM favorites
+                WHERE game_id = %s AND user_id = %s
+                RETURNING id
+                """,
+                (game_id, user_id)
             )
             deleted = cur.fetchone()
         conn.commit()

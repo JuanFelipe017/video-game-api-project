@@ -49,6 +49,10 @@ class FavoriteCreate(BaseModel):
     user_id: int
     game_id: int
 
+class FavoriteDelete(BaseModel):
+    user_id: int
+    game_id: int
+
 class FavoriteOut(BaseModel):
     id: int
     user_id: int

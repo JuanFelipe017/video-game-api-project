@@ -8,7 +8,7 @@ app = FastAPI(title="GameHub API", version="1.0.0") # Configuración básica de 
 # CORS: permite que el frontend consuma la API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://storage.googleapis.com"],
+    allow_origins=["http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*", "x-user-id"],  
