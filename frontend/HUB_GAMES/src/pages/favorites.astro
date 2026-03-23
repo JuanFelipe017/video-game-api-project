@@ -1,0 +1,51 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import NavBar from "../components/NavBar";
+import FavoritesGrid from "../components/FavoritesGrid";
+---
+
+<MainLayout title="Mis Favoritos — HUB_GAMES">
+    <NavBar currentPath="/favorites" client:load />
+
+    <main class="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-12">
+            <div
+                class="flex flex-col md:flex-row md:items-end justify-between gap-6"
+            >
+                <div>
+                    <span
+                        class="text-secondary font-label uppercase tracking-widest text-sm font-bold mb-2 block"
+                    >
+                        Colección personal
+                    </span>
+                    <h1
+                        class="text-5xl font-extrabold font-headline tracking-tight text-on-surface text-glow"
+                    >
+                        Tus Favoritos
+                    </h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a
+                        href="/"
+                        class="flex items-center gap-2 bg-surface-container-highest px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-bright transition-colors border border-outline-variant/15 text-on-surface-variant"
+                    >
+                        <span class="material-symbols-outlined text-lg"
+                            >explore</span
+                        >
+                        Explorar más
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Grid de favoritos (client island — necesita localStorage) -->
+        <FavoritesGrid client:load />
+    </main>
+
+    <footer
+        class="py-12 px-8 text-center text-on-surface-variant/40 text-xs tracking-widest uppercase border-t border-outline-variant/10"
+    >
+        © {new Date().getFullYear()} HUB_GAMES — All Systems Operational
+    </footer>
+</MainLayout>

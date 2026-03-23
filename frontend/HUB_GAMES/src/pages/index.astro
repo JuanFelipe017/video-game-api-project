@@ -1,0 +1,153 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import NavBar from '../components/NavBar';
+import GameCard from '../components/GameCard';
+import { getGames, getNewReleases } from '../lib/api';
+import type { Game } from '../types';
+
+const searchParam = Astro.url.searchParams.get('search') ?? undefined;
+const sectionParam = Astro.url.searchParams.get('section') ?? undefined;
+
+let popular: Game[] = [];
+let newReleases: Game[] = [];
+let searchResults: Game[] = [];
+let fetchError = false;
+
+try {
+  if (searchParam) {
+    const data = await getGames(1, 20, searchParam);
+    searchResults = data.results;
+  } else {
+    const [popData, newData] = await Promise.all([
+      getGames(1, 12),
+      getNewReleases(1, 8),
+    ]);
+    popular = popData.results;
+    newReleases = newData.results;
+  }
+} catch (e) {
+  fetchError = true;
+  console.error('Error al conectar con el backend:', e);
+}
+
+// Card grande = primer juego de popular o newReleases
+const [heroGame, ...restPopular] = popular;
+---
+
+<MainLayout title={searchParam ? `"${searchParam}" — HUB_GAMES` : 'HUB_GAMES — Tu launcher'}>
+  <NavBar currentPath="/" client:load />
+
+  <main class="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+
+    {fetchError && (
+      <div class="mb-8 p-4 rounded-xl bg-error-container/20 border border-error/20 text-error text-sm flex items-center gap-3">
+        <span class="material-symbols-outlined" style="font-size:20px">wifi_off</span>
+        No se pudo conectar con el backend. Asegúrate de que FastAPI esté corriendo en {import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8000'}.
+      </div>
+    )}
+
+    <!-- BÚSQUEDA -->
+    {searchParam && (
+      <section class="mb-16">
+        <div class="mb-8">
+          <span class="text-secondary font-label uppercase tracking-widest text-sm font-bold mb-2 block">Resultados</span>
+          <h1 class="text-4xl font-extrabold font-headline tracking-tight text-on-surface text-glow">
+            "{searchParam}"
+          </h1>
+          <p class="text-on-surface-variant mt-2">{searchResults.length} juego{searchResults.length !== 1 ? 's' : ''} encontrado{searchResults.length !== 1 ? 's' : ''}</p>
+        </div>
+
+        {searchResults.length === 0 ? (
+          <div class="text-center py-24">
+            <span class="material-symbols-outlined text-5xl text-outline mb-4 block">search_off</span>
+            <p class="text-on-surface-variant">No se encontraron juegos para "{searchParam}"</p>
+            <a href="/" class="mt-6 inline-block text-primary hover:underline">← Volver al inicio</a>
+          </div>
+        ) : (
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {searchResults.map((game) => (
+              <GameCard game={game} client:load />
+            ))}
+          </div>
+        )}
+      </section>
+    )}
+
+    <!-- HOME normal -->
+    {!searchParam && (
+      <>
+        <!-- HERO HEADER -->
+        <header class="mb-16">
+          <span class="text-secondary font-label uppercase tracking-widest text-sm font-bold mb-3 block">Bienvenido</span>
+          <h1 class="text-6xl font-extrabold font-headline tracking-tight text-on-surface text-glow leading-tight">
+            Tu biblioteca<br/>
+            <span class="text-primary">personal</span>
+          </h1>
+          <p class="text-on-surface-variant mt-4 max-w-xl text-lg">
+            Descubre, guarda y explora los mejores juegos desde un solo lugar.
+          </p>
+        </header>
+
+        <!-- NEW RELEASES -->
+        {newReleases.length > 0 && (
+          <section class="mb-20">
+            <div class="flex items-center justify-between mb-8">
+              <div>
+                <span class="text-secondary font-label uppercase tracking-widest text-xs font-bold mb-1 block">Recién llegados</span>
+                <h2 class="text-2xl font-bold font-headline text-on-surface">Nuevos lanzamientos</h2>
+              </div>
+              <a href="/?section=new" class="text-primary text-sm hover:underline flex items-center gap-1">
+                Ver todos
+                <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
+              </a>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+              {newReleases.map((game) => (
+                <GameCard game={game} client:load />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- POPULAR — bento grid con card grande -->
+        {popular.length > 0 && (
+          <section class="mb-20">
+            <div class="flex items-center justify-between mb-8">
+              <div>
+                <span class="text-secondary font-label uppercase tracking-widest text-xs font-bold mb-1 block">Destacados</span>
+                <h2 class="text-2xl font-bold font-headline text-on-surface">Más populares</h2>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <!-- Card grande ocupa 2 columnas -->
+              {heroGame && (
+                <GameCard game={heroGame} size="large" client:load />
+              )}
+              <!-- Resto de cards normales -->
+              {restPopular.slice(0, 4).map((game) => (
+                <GameCard game={game} client:load />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- Estado vacío si backend offline -->
+        {popular.length === 0 && newReleases.length === 0 && !fetchError && (
+          <div class="text-center py-32">
+            <span class="material-symbols-outlined text-6xl text-outline mb-6 block">sports_esports</span>
+            <h2 class="text-2xl font-bold font-headline mb-3">Sin juegos todavía</h2>
+            <p class="text-on-surface-variant max-w-sm mx-auto">
+              Importa juegos desde RAWG usando el endpoint <code class="text-primary">/api/games/import/{'{rawg_id}'}</code>
+            </p>
+          </div>
+        )}
+      </>
+    )}
+  </main>
+
+  <footer class="py-12 px-8 text-center text-on-surface-variant/40 text-xs tracking-widest uppercase border-t border-outline-variant/10">
+    © {new Date().getFullYear()} HUB_GAMES — All Systems Operational
+  </footer>
+</MainLayout>
