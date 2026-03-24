@@ -10,7 +10,8 @@ def register(data: dict) -> dict:
     )
     if not user:
         return {"error": "El email o nombre de usuario ya está en uso"}
-    return {"ok": True, "user": user}
+    # El frontend espera directamente {id, username, email}
+    return user
 
 # Función de login, que verifica credenciales y devuelve el usuario o un error.
 def login(data: dict) -> dict:
@@ -20,4 +21,5 @@ def login(data: dict) -> dict:
     )
     if not user:
         return {"error": "Email o contraseña incorrectos"}
-    return {"ok": True, "user": user}
+    # El frontend espera directamente {id, username, email}
+    return user

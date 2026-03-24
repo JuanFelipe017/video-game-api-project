@@ -1,4 +1,8 @@
 # Archivo principal de la aplicación FastAPI, donde se configura la app, se añaden los routers de las rutas y se define la ruta raíz para verificar que la API está corriendo.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import users, favorites, games
@@ -8,7 +12,7 @@ app = FastAPI(title="GameHub API", version="1.0.0") # Configuración básica de 
 # CORS: permite que el frontend consuma la API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*", "x-user-id"],  

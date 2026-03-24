@@ -16,7 +16,8 @@ def get_favorites(user_id: int) -> list:
                     g.rating,
                     g.background_image,
                     g.released,
-                    g.slug
+                    g.slug,
+                    g.rawg_id
                 FROM favorites f
                 JOIN games g ON f.game_id = g.id
                 WHERE f.user_id = %s
@@ -26,15 +27,19 @@ def get_favorites(user_id: int) -> list:
 
         return [
             {
-                "id":               row[0],
-                "user_id":          row[1],
-                "game_id":          row[2],
+                "id":      row[0],
+                "user_id": row[1],
+                "game_id": row[2],
                 "game": {
+                    "id":               row[2],
+                    "rawg_id":          row[8],
                     "name":             row[3],
                     "rating":           row[4],
                     "background_image": row[5],
                     "released":         str(row[6]) if row[6] else None,
                     "slug":             row[7],
+                    "genres":           [],
+                    "platforms":        [],
                 }
             }
             for row in rows

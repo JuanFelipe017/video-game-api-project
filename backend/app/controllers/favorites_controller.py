@@ -10,11 +10,13 @@ def add_favorite(user_id: int, game_id: int) -> dict:
     result = favorites_service.add_favorite(user_id, game_id)
     if not result:
         return {"error": "El juego ya está en favoritos"}
-    return {"ok": True, "favorite": result}
+    # El frontend espera directamente {id, user_id, game_id, game?}
+    return result
 
 # Elimina un favorito por su ID, devolviendo True si se eliminó o False si no se encontró
-def remove_favorite(user_id: int, game_id: int) -> bool:
+def remove_favorite(user_id: int, game_id: int) -> dict:
     result = favorites_service.remove_favorite(user_id, game_id)
     if not result:
         return {"error": "El juego no está en favoritos"}
-    return {"ok": True, "favorite": result , "msg": "Juego eliminado de favoritos"}
+    # Retornar confirmación simple
+    return {"deleted": True}
