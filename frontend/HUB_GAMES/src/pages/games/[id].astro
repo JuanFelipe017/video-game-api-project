@@ -2,17 +2,9 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import NavBar from '../../components/NavBar';
 import GameCard from '../../components/GameCard';
-
+import FavoriteButton from '../../components/FavoriteButton';
 import type { Game } from '../../types';
 import { getGame, getGames } from '../../lib/api';
-
-export async function getStaticPaths() {
-  const { results } = await getGames(1, 100);
-  return results.map((game) => ({
-    params: { id: String(game.id) },
-  }));
-}
-
 
 const { id } = Astro.params;
 let game: Game | null = null;
@@ -32,168 +24,344 @@ try {
 if (!game && !error) {
   return Astro.redirect('/');
 }
+
+const metacriticColor = game?.metacritic
+  ? game.metacritic >= 75 ? '#4ae176' : game.metacritic >= 50 ? '#adc6ff' : '#ffb4ab'
+  : '#8c909f';
 ---
 
 <MainLayout title={game ? `${game.name} — HUB_GAMES` : 'Juego no encontrado'}>
   <NavBar currentPath="/games" client:load />
 
-  <main class="pt-24 pb-20 min-h-screen">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 0.03em;
+      line-height: 0.88;
+    }
+    .dm { font-family: 'DM Sans', sans-serif; }
+    .stat-label {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-size: 0.62rem;
+      color: #8c909f;
+    }
+    .stat-value { font-family: 'DM Sans', sans-serif; font-weight: 600; }
+
+    .dossier-card {
+      background: linear-gradient(145deg, #171f33 0%, #131b2e 100%);
+      border: 1px solid rgba(66, 71, 84, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .dossier-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(173,198,255,0.3), transparent);
+    }
+
+    /* corner bracket decoration */
+    .bracketed { position: relative; }
+    .bracketed::before, .bracketed::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+    }
+    .bracketed::before { top: 0; left: 0; border-top: 1px solid #4ae176; border-left: 1px solid #4ae176; }
+    .bracketed::after  { bottom: 0; right: 0; border-bottom: 1px solid #4ae176; border-right: 1px solid #4ae176; }
+
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(to bottom, transparent, rgba(74,225,118,0.03) 50%, transparent);
+      animation: scanDown 6s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes scanDown {
+      0%   { top: -120px; }
+      100% { top: 100%; }
+    }
+
+    .tag-pill {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 5px 13px;
+      border-radius: 2px;
+      border: 1px solid rgba(74,225,118,0.22);
+      background: rgba(74,225,118,0.06);
+      color: #4ae176;
+      transition: all 0.2s;
+    }
+    .tag-pill:hover { background: rgba(74,225,118,0.14); border-color: rgba(74,225,118,0.5); }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 0;
+      border-bottom: 1px solid rgba(66,71,84,0.22);
+    }
+    .info-row:last-child { border-bottom: none; }
+
+    .pulse-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #4ae176;
+      flex-shrink: 0;
+      animation: pdot 2s ease-in-out infinite;
+    }
+    @keyframes pdot {
+      0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(74,225,118,0.6); }
+      50%      { opacity:.6; box-shadow: 0 0 0 4px rgba(74,225,118,0); }
+    }
+
+    .fade-up { animation: fuAnim 0.7s ease both; opacity: 0; }
+    @keyframes fuAnim {
+      from { opacity:0; transform: translateY(20px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .d1 { animation-delay: 0.05s; }
+    .d2 { animation-delay: 0.18s; }
+    .d3 { animation-delay: 0.32s; }
+    .d4 { animation-delay: 0.46s; }
+  </style>
+
+  <main class="min-h-screen pb-28" style="background:#0b1326;">
+
     {error || !game ? (
-      <div class="max-w-xl mx-auto px-6 py-32 text-center">
-        <span class="material-symbols-outlined text-5xl text-outline mb-4 block">broken_image</span>
+      <div class="max-w-xl mx-auto px-6 py-40 text-center">
+        <span class="material-symbols-outlined text-6xl text-outline mb-4 block">broken_image</span>
         <h1 class="text-2xl font-bold font-headline mb-3">Juego no encontrado</h1>
         <a href="/" class="text-primary hover:underline">← Volver al inicio</a>
       </div>
     ) : (
       <>
-        <!-- Hero con imagen de fondo -->
-        <div class="relative h-[70vh] min-h-[500px] overflow-hidden">
-          {game.background_image && (
-            <>
-              <img
-                src={game.background_image}
-                alt={game.name}
-                class="absolute inset-0 w-full h-full object-cover scale-105"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-surface/10" />
-              <div class="absolute inset-0 bg-gradient-to-r from-surface/80 via-surface/20 to-transparent" />
-            </>
+        <!-- ═══════════ HERO ═══════════ -->
+        <section class="relative w-full overflow-hidden" style="height: clamp(580px, 82vh, 920px);">
+
+          {game.background_image ? (
+            <img
+              src={game.background_image}
+              alt={game.name}
+              class="absolute inset-0 w-full h-full object-cover"
+              style="transform:scale(1.07); filter:brightness(0.5) saturate(1.15);"
+            />
+          ) : (
+            <div class="absolute inset-0" style="background:linear-gradient(135deg,#060e20,#131b2e);"/>
           )}
 
-          <!-- Info sobre la imagen -->
-          <div class="absolute bottom-0 left-0 right-0 px-8 pb-12 max-w-7xl mx-auto">
-            <!-- Breadcrumb -->
-            <div class="flex items-center gap-2 text-on-surface-variant text-xs mb-6">
-              <a href="/" class="hover:text-primary transition-colors">Inicio</a>
-              <span class="material-symbols-outlined" style="font-size:14px">chevron_right</span>
-              <span class="text-on-surface">{game.name}</span>
+          <!-- gradient overlays -->
+          <div class="absolute inset-0" style="background:linear-gradient(to top,#0b1326 0%,rgba(11,19,38,0.72) 40%,transparent 100%);"/>
+          <div class="absolute inset-0" style="background:linear-gradient(to right,#0b1326 0%,rgba(11,19,38,0.55) 35%,transparent 100%);"/>
+          <div class="absolute bottom-0 left-0 right-0 h-40" style="background:linear-gradient(to top,rgba(74,225,118,0.03),transparent);"/>
+
+          <!-- scan line overlay -->
+          <div class="absolute inset-0 overflow-hidden" style="opacity:0.25; pointer-events:none;">
+            <div class="scan-line"/>
+          </div>
+
+          <!-- breadcrumb -->
+          <div class="absolute top-28 left-8 fade-up d1" style="font-family:'DM Sans';font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:#424754;">
+            <a href="/" style="color:#8c909f;" class="hover:text-primary transition-colors">Inicio</a>
+            <span style="margin:0 8px;color:#2d3449;">/</span>
+            <span style="color:#c2c6d6;">{game.name}</span>
+          </div>
+
+          <!-- hero content pinned to bottom -->
+          <div class="absolute bottom-0 left-0 right-0 px-8 pb-16 max-w-screen-xl mx-auto">
+
+            <!-- status + genre chips -->
+            <div class="flex flex-wrap items-center gap-2 mb-5 fade-up d1">
+              <div class="flex items-center gap-2 px-3 py-1.5" style="background:rgba(74,225,118,0.07);border:1px solid rgba(74,225,118,0.18);border-radius:2px;">
+                <div class="pulse-dot"/>
+                <span style="font-family:'DM Sans';font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:#4ae176;font-weight:600;">Live</span>
+              </div>
+              {game.genres?.slice(0,3).map((g) => (
+                <span class="tag-pill">{g.name}</span>
+              ))}
+              {game.esrb_rating && (
+                <span style="font-family:'DM Sans';font-size:0.62rem;letter-spacing:0.1em;color:#8c909f;border:1px solid rgba(140,144,159,0.2);padding:4px 10px;border-radius:2px;">{game.esrb_rating}</span>
+              )}
             </div>
 
-            <!-- Géneros -->
-            {game.genres?.length > 0 && (
-              <div class="flex flex-wrap gap-2 mb-4">
-                {game.genres.map((g) => (
-                  <span class="bg-secondary-container/20 text-secondary text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md uppercase tracking-wide">
-                    {g.name}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <h1 class="text-5xl lg:text-7xl font-extrabold font-headline tracking-tight text-on-surface text-glow mb-4">
+            <!-- big title -->
+            <h1 class="hero-title text-on-surface mb-7 fade-up d2"
+                style="font-size:clamp(3.6rem,9.5vw,9.5rem);">
               {game.name}
             </h1>
 
-            <!-- Stats -->
-            <div class="flex flex-wrap items-center gap-6 text-sm text-on-surface-variant">
+            <!-- stats + fav button row -->
+            <div class="flex flex-wrap items-end gap-8 fade-up d3">
               {game.rating && (
-                <div class="flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-secondary" style="font-size:18px;font-variation-settings:'FILL' 1">star</span>
-                  <span class="text-on-surface font-semibold">{game.rating.toFixed(1)}</span>
-                  {game.ratings_count && <span>({game.ratings_count.toLocaleString()} reseñas)</span>}
+                <div class="flex flex-col gap-0.5">
+                  <span class="stat-label">Rating</span>
+                  <div class="flex items-baseline gap-1">
+                    <span class="stat-value" style="font-size:1.6rem;color:#4ae176;">{game.rating.toFixed(1)}</span>
+                    <span style="font-family:'DM Sans';font-size:0.72rem;color:#8c909f;">/ 5</span>
+                    {game.ratings_count && (
+                      <span style="font-family:'DM Sans';font-size:0.65rem;color:#424754;margin-left:3px;">({game.ratings_count.toLocaleString()})</span>
+                    )}
+                  </div>
                 </div>
               )}
               {game.metacritic && (
-                <div class="flex items-center gap-1.5">
-                  <span class="text-on-surface font-semibold">Metacritic</span>
-                  <span class={`px-2 py-0.5 rounded text-xs font-bold ${
-                    game.metacritic >= 75 ? 'bg-secondary/20 text-secondary' :
-                    game.metacritic >= 50 ? 'bg-primary/20 text-primary' :
-                    'bg-error/20 text-error'
-                  }`}>
-                    {game.metacritic}
-                  </span>
+                <div class="flex flex-col gap-0.5">
+                  <span class="stat-label">Metacritic</span>
+                  <span class="stat-value" style={`font-size:1.6rem;color:${metacriticColor};`}>{game.metacritic}</span>
                 </div>
               )}
               {game.released && (
-                <div class="flex items-center gap-1.5">
-                  <span class="material-symbols-outlined" style="font-size:18px">calendar_today</span>
-                  {new Date(game.released).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                <div class="flex flex-col gap-0.5">
+                  <span class="stat-label">Lanzamiento</span>
+                  <span class="stat-value text-on-surface" style="font-size:0.88rem;">
+                    {new Date(game.released + 'T12:00:00').toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })}
+                  </span>
                 </div>
               )}
-              {game.esrb_rating && (
-                <span class="border border-outline-variant/30 px-2 py-0.5 rounded text-xs">
-                  {game.esrb_rating}
-                </span>
-              )}
+
+              <div style="width:1px;height:40px;background:rgba(66,71,84,0.5);align-self:center;"/>
+
+              <!-- favorite button — GameCard en modo mínimo -->
+            <div class="fade-up d4">
+  <FavoriteButton game={game} client:load />
+</div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Contenido -->
-        <div class="max-w-7xl mx-auto px-8 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
-          <!-- Descripción -->
-          <div class="lg:col-span-2">
+        <!-- ═══════════ BODY ═══════════ -->
+        <div class="max-w-screen-xl mx-auto px-8 mt-14 grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+          <!-- main col -->
+          <div class="lg:col-span-8 space-y-8">
+
             {game.description && (
-              <section class="mb-10">
-                <h2 class="text-lg font-bold font-headline mb-4 text-on-surface">Acerca del juego</h2>
+              <div class="dossier-card bracketed rounded-lg p-8">
+                <div class="flex items-center gap-3 mb-6">
+                  <span class="material-symbols-outlined" style="font-size:17px;color:#4ae176;">info</span>
+                  <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.16em;text-transform:uppercase;font-size:0.68rem;color:#c2c6d6;">Acerca del juego</span>
+                </div>
                 <div
-                  class="text-on-surface-variant leading-relaxed space-y-3 text-sm"
+                  class="text-on-surface-variant text-sm space-y-3"
+                  style="font-family:'DM Sans';line-height:1.88;font-weight:300;"
                   set:html={game.description}
                 />
-              </section>
+              </div>
             )}
 
-            <!-- Plataformas -->
             {game.platforms?.length > 0 && (
-              <section class="mb-10">
-                <h2 class="text-lg font-bold font-headline mb-4 text-on-surface">Plataformas</h2>
+              <div class="dossier-card rounded-lg p-8">
+                <div class="flex items-center gap-3 mb-6">
+                  <span class="material-symbols-outlined" style="font-size:17px;color:#4ae176;">devices</span>
+                  <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.16em;text-transform:uppercase;font-size:0.68rem;color:#c2c6d6;">Plataformas</span>
+                </div>
                 <div class="flex flex-wrap gap-2">
                   {game.platforms.map((p) => (
-                    <span class="bg-surface-container-high px-4 py-2 rounded-lg text-sm text-on-surface-variant border border-outline-variant/10">
+                    <span style="font-family:'DM Sans';font-size:0.78rem;font-weight:500;padding:8px 18px;background:rgba(173,198,255,0.05);border:1px solid rgba(173,198,255,0.12);border-radius:3px;color:#c2c6d6;letter-spacing:0.06em;">
                       {p.name}
                     </span>
                   ))}
                 </div>
-              </section>
+              </div>
             )}
           </div>
 
-          <!-- Sidebar -->
-          <aside class="space-y-4">
-            <div class="bg-surface-container rounded-2xl p-6 space-y-4">
-              <h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Información</h3>
+          <!-- sidebar -->
+          <aside class="lg:col-span-4 space-y-5">
+
+            <!-- expediente card -->
+            <div class="dossier-card rounded-lg p-6 relative overflow-hidden">
+              <div class="scan-line" style="opacity:0.15;"/>
+
+              <div class="flex items-center justify-between mb-5">
+                <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.2em;text-transform:uppercase;font-size:0.62rem;color:#4ae176;">Expediente</span>
+                <div class="flex items-center gap-1.5">
+                  <div class="pulse-dot"/>
+                  <span style="font-family:'DM Sans';font-size:0.58rem;letter-spacing:0.1em;color:#4ae176;">ACTIVO</span>
+                </div>
+              </div>
+
+              <!-- rating bar -->
+              <div style="width:100%;height:2px;background:rgba(66,71,84,0.35);border-radius:99px;margin-bottom:20px;overflow:hidden;">
+                <div style={`height:100%;width:${game.rating ? (game.rating/5*100).toFixed(0) : 60}%;background:linear-gradient(90deg,#4ae176,#adc6ff);border-radius:99px;`}/>
+              </div>
 
               {game.released && (
-                <div>
-                  <p class="text-xs text-outline mb-1">Lanzamiento</p>
-                  <p class="text-sm text-on-surface">
-                    {new Date(game.released).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
+                <div class="info-row">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-outline" style="font-size:15px;">calendar_today</span>
+                    <span class="stat-label" style="font-size:0.65rem;">Lanzamiento</span>
+                  </div>
+                  <span class="stat-value text-on-surface" style="font-size:0.78rem;">
+                    {new Date(game.released + 'T12:00:00').toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' })}
+                  </span>
                 </div>
               )}
-
               {game.rating && (
-                <div>
-                  <p class="text-xs text-outline mb-1">Rating</p>
-                  <p class="text-sm text-on-surface">{game.rating.toFixed(2)} / 5</p>
+                <div class="info-row">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="font-size:15px;color:#4ae176;font-variation-settings:'FILL' 1;">star</span>
+                    <span class="stat-label" style="font-size:0.65rem;">Rating</span>
+                  </div>
+                  <span class="stat-value" style="font-size:0.78rem;color:#4ae176;">{game.rating.toFixed(2)} / 5</span>
                 </div>
               )}
-
               {game.metacritic && (
-                <div>
-                  <p class="text-xs text-outline mb-1">Metacritic</p>
-                  <p class="text-sm text-on-surface">{game.metacritic} / 100</p>
+                <div class="info-row">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-outline" style="font-size:15px;">analytics</span>
+                    <span class="stat-label" style="font-size:0.65rem;">Metacritic</span>
+                  </div>
+                  <span class="stat-value font-bold" style={`font-size:0.78rem;color:${metacriticColor};`}>{game.metacritic} / 100</span>
                 </div>
               )}
-
-              {game.genres?.length > 0 && (
-                <div>
-                  <p class="text-xs text-outline mb-1">Géneros</p>
-                  <p class="text-sm text-on-surface">{game.genres.map((g) => g.name).join(', ')}</p>
+              {game.ratings_count && (
+                <div class="info-row">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-outline" style="font-size:15px;">group</span>
+                    <span class="stat-label" style="font-size:0.65rem;">Reseñas</span>
+                  </div>
+                  <span class="stat-value text-on-surface" style="font-size:0.78rem;">{game.ratings_count.toLocaleString()}</span>
                 </div>
               )}
             </div>
 
-            <!-- Agregar a favoritos (client island) -->
-            <GameCard game={game} client:load />
+            <!-- géneros card -->
+            {game.genres?.length > 0 && (
+              <div class="dossier-card rounded-lg p-6">
+                <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.2em;text-transform:uppercase;font-size:0.62rem;color:#8c909f;display:block;margin-bottom:12px;">Géneros</span>
+                <div class="flex flex-wrap gap-2">
+                  {game.genres.map((g) => (
+                    <span class="tag-pill">{g.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </aside>
         </div>
 
-        <!-- Juegos relacionados -->
+        <!-- ═══════════ TAMBIÉN TE PUEDE GUSTAR ═══════════ -->
         {related.length > 0 && (
-          <section class="max-w-7xl mx-auto px-8 mt-16 pt-12 border-t border-outline-variant/10">
-            <h2 class="text-2xl font-bold font-headline mb-8 text-on-surface">También te puede gustar</h2>
+          <section class="max-w-screen-xl mx-auto px-8 mt-20 pt-14" style="border-top:1px solid rgba(66,71,84,0.28);">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="pulse-dot"/>
+              <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.18em;text-transform:uppercase;font-size:0.65rem;color:#4ae176;">Descubre más</span>
+              <div style="flex:1;height:1px;background:linear-gradient(to right,rgba(74,225,118,0.25),transparent);"/>
+            </div>
+            <h2 class="hero-title text-on-surface mb-10" style="font-size:clamp(2.2rem,5vw,4rem);">
+              También te puede gustar
+            </h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
               {related.map((g) => (
                 <GameCard game={g} client:load />

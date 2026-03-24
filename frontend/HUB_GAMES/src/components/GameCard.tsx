@@ -47,7 +47,7 @@ export default function GameCard({ game, isFavorite = false, onFavoriteChange, s
     };
 
     const genres = game.genres?.slice(0, 2) ?? [];
-    const fallbackImg = `https://placehold.co/400x300/171f33/adc6ff?text=${encodeURIComponent(game.name)}`;
+    const fallbackImg = "https://lh3.googleusercontent.com/aida-public/AB6AXuBuXKIlGj8mBATlsXLvmlHJNcobJtPQdDjq2i7l6tFx63kkmlpeZoBeAjumkTdnPIK0kXfsrEVKl9oK57iLQXq35IXIixHiyj1uW_8QDRcJadpgxkLnB6v0DfVUKoIjvwa7_qmzycIcEymxQ4WlkgJQkQDNX26e3GJjDVtaYK0MRtws2ljdZiGTrTA3XWDXsk6T2a5OxHw5Bz4bolY3ZkjkZW1Jo4JsRiuQgVTmmu5-RSh7ZwiyVPUN1NbUKwS9DMep7_d49vTI-IM";
 
     if (size === 'large') {
         return (

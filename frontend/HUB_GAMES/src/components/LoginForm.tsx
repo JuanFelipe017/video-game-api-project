@@ -18,15 +18,17 @@ export default function LoginForm() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        // Validación previa: no entrar al try si hay error obvio
+        if (mode === 'register' && !form.username.trim()) {
+            setError('El nombre de usuario es requerido');
+            setLoading(false);
+            return;
+        }
         try {
             let user;
             if (mode === 'login') {
                 user = await login(form.email, form.password);
             } else {
-                if (!form.username.trim()) {
-                    setError('El nombre de usuario es requerido');
-                    return;
-                }
                 user = await register(form.username, form.email, form.password);
             }
             setUser(user);
@@ -40,7 +42,12 @@ export default function LoginForm() {
 
     return (
         <div className="min-h-screen bg-surface flex items-center justify-center px-6">
-            {/* Background decorativo */}
+            {/* Background decorativo 
+            Carga imagen de fondo por detras del login 
+            */}
+            <div className="fixed inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
+                <img alt="Sci-fi game character silhouette" className="h-full w-full object-cover object-center" data-alt="dramatic silhouette of a high-tech sci-fi warrior standing in front of a glowing blue portal with ember particles and cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgYJzTdvYsdDpycRZRSuWliyYtkGTUW89VLd3C_4RLWqQRTR8DTLntUCQtcWNlRnfj-JGDAU3IgKGrRVpUtuqCnSOZOoCzZMqPzSNYGeOZx1Gv1gvgdJe4DxL0Zy9wh0Z35PQ1NerH1wo-DBo4eYx3te8e3YLWUrbGEitwOTCiilb378oMkHo1wFmyHqnP_pTokFIy7fiuL29tiHXyFfK3TCVkx9Kh8DNHIOVG_ZZizKiXpzezGtPa-rX-mFRsJyn-tmtw128RDl0" />
+            </div>
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
                 <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-secondary/5 rounded-full blur-3xl" />

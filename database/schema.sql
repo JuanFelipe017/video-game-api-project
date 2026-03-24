@@ -1,7 +1,8 @@
 -- Esquema SQL para la base de datos de la aplicación, definiendo las tablas necesarias para 
 -- usuarios, géneros, plataformas, juegos y favoritos, con sus respectivas relaciones y restricciones.
+CREATE DATABASE videogame_db;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -9,17 +10,17 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE genres (
+CREATE TABLE IF NOT EXISTS genres (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL
 );
 
-CREATE TABLE platforms (
+CREATE TABLE IF NOT EXISTS platforms (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL
 );
 
-CREATE TABLE games (
+CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     rawg_id INTEGER UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -34,21 +35,21 @@ CREATE TABLE games (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE game_genres (
+CREATE TABLE IF NOT EXISTS game_genres (
     id SERIAL PRIMARY KEY,
     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     genre_id INTEGER NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
     UNIQUE(game_id, genre_id)
 );
 
-CREATE TABLE game_platforms (
+CREATE TABLE IF NOT EXISTS game_platforms (
     id SERIAL PRIMARY KEY,
     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     platform_id INTEGER NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
     UNIQUE(game_id, platform_id)
 );
 
-CREATE TABLE favorites (
+CREATE TABLE IF NOT EXISTS favorites (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,

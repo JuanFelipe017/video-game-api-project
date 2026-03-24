@@ -8,23 +8,26 @@ export default function FavoritesGrid() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [removing, setRemoving] = useState<Set<number>>(new Set());
-
-    const user = getUser();
+    // getUser() debe llamarse dentro de useEffect para evitar errores de SSR
+    const [user, setUserState] = useState<ReturnType<typeof getUser>>(null);
 
     useEffect(() => {
-        if (!user) {
+        const currentUser = getUser();
+        setUserState(currentUser);
+        if (!currentUser) {
             window.location.href = '/login';
             return;
         }
-        loadFavorites();
+        loadFavorites(currentUser.id);
     }, []);
 
-    const loadFavorites = async () => {
-        if (!user) return;
+    const loadFavorites = async (userId?: number) => {
+        const uid = userId ?? user?.id;
+        if (!uid) return;
         setLoading(true);
         setError(null);
         try {
-            const data = await getFavorites(user.id);
+            const data = await getFavorites(uid);
             setFavorites(data);
         } catch (e: any) {
             setError(e.message ?? 'Error al cargar favoritos');
@@ -34,10 +37,10 @@ export default function FavoritesGrid() {
     };
 
     const handleRemove = async (gameId: number) => {
-        if (!user) return;
+        if (!user?.id) return;
         setRemoving((prev) => new Set(prev).add(gameId));
         try {
-            await removeFavorite(user.id, gameId);
+            await removeFavorite(user!.id, gameId);
             setFavorites((prev) => prev.filter((f) => f.game_id !== gameId));
         } catch (e: any) {
             setError(e.message ?? 'Error al eliminar');
@@ -101,7 +104,7 @@ export default function FavoritesGrid() {
     const GameFavCard = ({ fav, large = false }: { fav: FavoriteOut; large?: boolean }) => {
         const game: Game | undefined = fav.game;
         if (!game) return null;
-        const fallbackImg = `https://placehold.co/400x300/171f33/adc6ff?text=${encodeURIComponent(game.name)}`;
+        const fallbackImg = "https://lh3.googleusercontent.com/aida-public/AB6AXuBuXKIlGj8mBATlsXLvmlHJNcobJtPQdDjq2i7l6tFx63kkmlpeZoBeAjumkTdnPIK0kXfsrEVKl9oK57iLQXq35IXIixHiyj1uW_8QDRcJadpgxkLnB6v0DfVUKoIjvwa7_qmzycIcEymxQ4WlkgJQkQDNX26e3GJjDVtaYK0MRtws2ljdZiGTrTA3XWDXsk6T2a5OxHw5Bz4bolY3ZkjkZW1Jo4JsRiuQgVTmmu5-RSh7ZwiyVPUN1NbUKwS9DMep7_d49vTI-IM";
         const isRemoving = removing.has(fav.game_id);
 
         if (large) {

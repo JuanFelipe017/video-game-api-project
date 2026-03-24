@@ -30,13 +30,11 @@ export default function NavBar({ currentPath = '/' }: Props) {
 
     const navLinks = [
         { href: '/', label: 'Home' },
-        { href: '/?section=popular', label: 'Popular' },
-        { href: '/?section=new', label: 'New' },
         { href: '/favorites', label: 'Favorites' },
     ];
 
     const isActive = (href: string) => {
-        if (href === '/') return currentPath === '/';
+        if (href === '/') return currentPath === '/' || currentPath === '';
         return currentPath.startsWith(href);
     };
 
