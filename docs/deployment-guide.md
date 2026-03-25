@@ -1,7 +1,7 @@
 # 🚀 Guía de Despliegue — GameHub en GCP
 
-Esta guía cubre el despliegue completo de GameHub en Google Cloud Platform:
-base de datos en Cloud SQL, backend en App Engine y frontend en Cloud Storage.
+Esta guía cubre el despliegue completo de GameHub en Google Cloud Platform
+usando Cloud Run para frontend y backend, y Cloud SQL para la base de datos.
 
 ---
 
@@ -11,6 +11,7 @@ base de datos en Cloud SQL, backend en App Engine y frontend en Cloud Storage.
 - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) instalado y autenticado
 - Python 3.10+
 - Git
+- Docker (para builds locales opcionales)
 
 ```bash
 # Verificar que gcloud está instalado
@@ -20,12 +21,12 @@ gcloud --version
 gcloud auth login
 
 # Configurar el proyecto
-gcloud config set project [ID-DEL-PROYECTO]
+gcloud config set project gamehub-app-490603
 ```
 
 ---
 
-## Paso 1 — Crear la base de datos en Cloud SQL
+## Paso 1 — Base de datos en Cloud SQL
 
 ### 1.1 Crear la instancia PostgreSQL
 
@@ -38,7 +39,6 @@ En la consola de GCP: **Cloud SQL → Crear instancia → PostgreSQL**
 | Región | `us-central1` |
 | Tipo de máquina | `db-f1-micro` (free tier) |
 | Almacenamiento | 10 GB HDD |
-| Contraseña root | [tu contraseña segura] |
 
 O por CLI:
 
@@ -61,13 +61,12 @@ gcloud sql users create gamehub_user \
   --password=[tu-contraseña]
 ```
 
-### 1.3 Autorizar tu IP para acceso externo
+### 1.3 Autorizar IP para acceso externo
 
 En la consola: **Cloud SQL → gamehub-db → Conexiones → Redes autorizadas**
 
 Agrega tu IP pública (búscala en [whatismyip.com](https://whatismyip.com)).
 
-O por CLI:
 ```bash
 gcloud sql instances patch gamehub-db \
   --authorized-networks=[TU-IP-PUBLICA]/32
@@ -77,7 +76,7 @@ gcloud sql instances patch gamehub-db \
 
 ```bash
 # Conectar a la instancia
-gcloud sql connect gamehub-db --user=gamehub_user --database=gamehub
+gcloud sql connect gamehub-db --user=postgres
 
 # Dentro de psql, ejecutar el schema
 \i database/schema.sql
@@ -88,131 +87,132 @@ gcloud sql connect gamehub-db --user=gamehub_user --database=gamehub
 
 ---
 
-## Paso 2 — Desplegar el backend en App Engine
+## Paso 2 — Backend en Cloud Run
 
-### 2.1 Crear el archivo `app.yaml`
-
-Crear `backend/app.yaml`:
-
-```yaml
-runtime: python313
-
-entrypoint: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-
-env_variables:
-  RAWG_API_KEY: "fc7e8f3dd675402cb10794ff7f2e550a"
-  PGHOST: "[IP-PUBLICA-DE-TU-INSTANCIA-CLOUD-SQL]"
-  PGPORT: "5432"
-  PGUSER: "gamehub_user"
-  PGPASSWORD: "[tu-contraseña]"
-  PGDATABASE: "gamehub"
-```
-
-> **Importante:** La IP pública de tu instancia Cloud SQL la encuentras en
-> **Cloud SQL → gamehub-db → Descripción general → IP pública**
-
-### 2.2 Crear `requirements.txt`
-
-Crear `backend/requirements.txt`:
-
-```
-fastapi
-uvicorn
-requests
-psycopg2-binary
-python-dotenv
-bcrypt
-```
-
-### 2.3 Desplegar
+### 2.1 Construir y subir la imagen
 
 ```bash
+# Navegar a la carpeta del backend
 cd backend
-gcloud app deploy
+
+# Construir y subir la imagen a Artifact Registry
+gcloud builds submit \
+  --tag us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-backend:latest
 ```
 
-Confirmar con `Y` cuando lo solicite. El proceso tarda unos 3-5 minutos.
-
-### 2.4 Verificar el despliegue
+### 2.2 Desplegar en Cloud Run
 
 ```bash
-gcloud app browse
+gcloud run deploy gamehub-backend \
+  --image us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-backend:latest \
+  --region us-central1 \
+  --allow-unauthenticated
 ```
 
-Debe abrir el navegador en la URL de App Engine y mostrar:
+### 2.3 Verificar el despliegue
+
+Abrir en el navegador:
+```
+https://gamehub-backend-556939640766.us-central1.run.app/
+```
+
+Debe mostrar:
 ```json
 {"message": "GameHub API running"}
 ```
 
-La URL del backend tendrá el formato:
+Documentación Swagger disponible en:
 ```
-https://[ID-DEL-PROYECTO].uc.r.appspot.com
+https://gamehub-backend-556939640766.us-central1.run.app/docs
 ```
 
 ---
 
-## Paso 3 — Desplegar el frontend en Cloud Storage
+## Paso 3 — Frontend en Cloud Run (Astro SSR)
 
-### 3.1 Crear el bucket
-
-```bash
-gsutil mb -l us-central1 gs://gamehub-frontend-[ID-DEL-PROYECTO]
-```
-
-### 3.2 Actualizar la URL del backend en `api.js`
-
-Antes de subir el frontend, editar `frontend/js/api.js` y cambiar:
-
-```javascript
-// Cambiar esto:
-const API_BASE = "http://localhost:8000/api";
-
-// Por la URL real de App Engine:
-const API_BASE = "https://[ID-DEL-PROYECTO].uc.r.appspot.com/api";
-```
-
-### 3.3 Subir los archivos
+### 3.1 Construir y subir la imagen
 
 ```bash
-cd frontend
-gsutil -m cp -r . gs://gamehub-frontend-[ID-DEL-PROYECTO]/
+# Navegar a la carpeta del frontend
+cd frontend/HUB_GAMES
+
+# Construir y subir la imagen a Artifact Registry
+gcloud builds submit \
+  --tag us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-front-back:latest
 ```
 
-### 3.4 Hacer el bucket público
-
-```bash
-gsutil iam ch allUsers:objectViewer gs://gamehub-frontend-[ID-DEL-PROYECTO]
-```
-
-### 3.5 Configurar como sitio web estático
+### 3.2 Desplegar en Cloud Run
 
 ```bash
-gsutil web set -m index.html -e index.html \
-  gs://gamehub-frontend-[ID-DEL-PROYECTO]
+gcloud run deploy gamehub-front-back \
+  --image us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-front-back:latest \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars PUBLIC_API_URL=https://gamehub-backend-556939640766.us-central1.run.app,HOST=0.0.0.0
 ```
 
-La URL del frontend tendrá el formato:
-```
-https://storage.googleapis.com/gamehub-frontend-[ID-DEL-PROYECTO]/index.html
-```
+### 3.3 Variables de entorno
+
+| Variable | Valor |
+|---|---|
+| `PUBLIC_API_URL` | `https://gamehub-backend-556939640766.us-central1.run.app` |
+| `HOST` | `0.0.0.0` |
 
 ---
 
 ## Paso 4 — Verificar conectividad
 
+### URLs de acceso
+
+| Componente | URL |
+|---|---|
+| Frontend | `https://gamehub-front-back-556939640766.us-central1.run.app` |
+| Backend API | `https://gamehub-backend-556939640766.us-central1.run.app` |
+| Swagger | `https://gamehub-backend-556939640766.us-central1.run.app/docs` |
+
 ### Checklist final
 
-- [ ] `GET https://[backend-url]/` devuelve `{"message": "GameHub API running"}`
-- [ ] `GET https://[backend-url]/api/games/` devuelve lista de juegos
-- [ ] `GET https://[backend-url]/docs` muestra el Swagger
-- [ ] El frontend carga en el navegador sin errores en la consola
+- [ ] `GET https://gamehub-backend-.../` devuelve `{"message": "GameHub API running"}`
+- [ ] `GET https://gamehub-backend-.../api/games/` devuelve lista de juegos
+- [ ] `GET https://gamehub-backend-.../docs` muestra el Swagger
+- [ ] El frontend carga sin errores en la consola
 - [ ] El login y registro funcionan correctamente
-- [ ] Los juegos se muestran en el index y en games.html
+- [ ] Los juegos se muestran en el index y en la página de explorar
 
-### Ver logs del backend
+### Ver logs
 
 ```bash
-gcloud app logs tail -s default
+# Logs del backend
+gcloud run services logs read gamehub-backend --region us-central1
+
+# Logs del frontend
+gcloud run services logs read gamehub-front-back --region us-central1
+```
+
+---
+
+## Actualizar después de cambios
+
+### Actualizar el frontend
+
+```bash
+cd frontend/HUB_GAMES
+gcloud builds submit \
+  --tag us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-front-back:latest
+gcloud run deploy gamehub-front-back \
+  --image us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-front-back:latest \
+  --region us-central1
+```
+
+### Actualizar el backend
+
+```bash
+cd backend
+gcloud builds submit \
+  --tag us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-backend:latest
+gcloud run deploy gamehub-backend \
+  --image us-central1-docker.pkg.dev/gamehub-app-490603/cloud-run-source-deploy/gamehub-backend:latest \
+  --region us-central1
 ```
 
 ---
@@ -221,11 +221,12 @@ gcloud app logs tail -s default
 
 | Error | Causa | Solución |
 |---|---|---|
-| `Connection refused` en PostgreSQL | IP no autorizada en Cloud SQL | Agregar la IP del App Engine en "Redes autorizadas" |
+| `Connection refused` en PostgreSQL | IP no autorizada en Cloud SQL | Agregar la IP del Cloud Run en "Redes autorizadas" |
 | `CORS error` en el frontend | Backend no permite el origen | Verificar `allow_origins` en `main.py` |
-| `Module not found` al desplegar | Falta dependencia en `requirements.txt` | Agregar el módulo faltante y volver a desplegar |
-| Frontend no carga datos | `API_BASE` apunta a localhost | Actualizar `api.js` con la URL real de App Engine |
-| `502 Bad Gateway` en App Engine | Error en el startup de uvicorn | Revisar logs con `gcloud app logs tail` |
+| `Mixed Content` en el navegador | URL del backend en `http` en lugar de `https` | Verificar `PUBLIC_API_URL` en las variables de entorno |
+| `Module not found` al desplegar | Falta dependencia en `requirements.txt` | Agregar el módulo faltante y redesplegar |
+| `502 Bad Gateway` | Error en el startup del servidor | Revisar logs con `gcloud run services logs read` |
+| Frontend no carga datos | `PUBLIC_API_URL` no configurada | Verificar variables de entorno en Cloud Run |
 
 ---
 
@@ -234,8 +235,9 @@ gcloud app logs tail -s default
 | Servicio | Free tier | Costo estimado |
 |---|---|---|
 | Cloud SQL (db-f1-micro) | No incluido en free tier | ~$7-10 USD/mes |
-| App Engine (F1) | 28 horas-instancia/día gratis | $0 en uso normal |
-| Cloud Storage | 5 GB gratis | $0 para frontend estático |
+| Cloud Run (frontend) | 2M requests/mes gratis | $0 en uso normal |
+| Cloud Run (backend) | 2M requests/mes gratis | $0 en uso normal |
+| Artifact Registry | 0.5 GB gratis | $0 para imágenes pequeñas |
 
 > **Recomendación:** Apagar la instancia de Cloud SQL cuando no se esté usando para evitar cargos.
 > ```bash

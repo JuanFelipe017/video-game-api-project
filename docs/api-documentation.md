@@ -1,7 +1,7 @@
 # 📡 GameHub — Documentación de API
 
 Base URL (local): `http://localhost:8000/api`  
-Base URL (producción): `https://[URL-PENDIENTE]/api`
+Base URL (producción): `https://gamehub-backend-556939640766.us-central1.run.app/api`
 
 ---
 
@@ -198,17 +198,6 @@ Actualiza campos editables de un juego existente.
 }
 ```
 
-**Request:**
-```
-PUT /api/games/1
-Content-Type: application/json
-
-{
-  "rating": 4.9,
-  "description": "Descripción actualizada"
-}
-```
-
 **Response 200:**
 ```json
 {
@@ -289,7 +278,7 @@ Content-Type: application/json
 }
 ```
 
-**Response 400 (email o usuario ya existe):**
+**Response 400:**
 ```json
 {
   "detail": "El email o nombre de usuario ya está en uso"
@@ -345,12 +334,6 @@ Content-Type: application/json
 ### GET `/api/favorites/{user_id}`
 Obtiene la lista de juegos favoritos de un usuario.
 
-**Parámetros path:**
-
-| Parámetro | Tipo | Descripción |
-|---|---|---|
-| `user_id` | integer | ID del usuario |
-
 **Request:**
 ```
 GET /api/favorites/1
@@ -405,7 +388,7 @@ Content-Type: application/json
 }
 ```
 
-**Response 400 (ya existe):**
+**Response 400:**
 ```json
 {
   "detail": "El juego ya está en favoritos"
@@ -416,12 +399,6 @@ Content-Type: application/json
 
 ### DELETE `/api/favorites/{favorite_id}`
 Elimina un favorito por su ID.
-
-**Parámetros path:**
-
-| Parámetro | Tipo | Descripción |
-|---|---|---|
-| `favorite_id` | integer | ID del registro en la tabla favorites |
 
 **Request:**
 ```
