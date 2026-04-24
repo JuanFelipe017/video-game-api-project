@@ -249,6 +249,5 @@ video-game-api-project/
     ├── api-documentation.md
     └── deployment-guide.md
 ```
-<!--CI TEST -->
-#   t e s t   d e p l o y  
+ 
  
