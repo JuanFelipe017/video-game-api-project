@@ -10,7 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # ESTO ES LO IMPORTANTE: Define la carpeta para TODOS los pasos
     defaults:
       run:
         working-directory: frontend/HUB_GAMES
@@ -22,13 +21,15 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22' # He actualizado esto a 22 porque tu package.json dice >=22.12.0
 
       - name: Instalar dependencias
         run: npm install
 
-      - name: Ejecutar tests
-        run: npm test --if-present
+      # Hemos eliminado el paso de tests porque no existen en tu proyecto
+      
+      - name: Ejecutar Build de Astro
+        run: npm run build
 
       - name: Build exitoso
-        run: echo "Build completado correctamente"
+        run: echo "El proyecto Astro se ha compilado correctamente en frontend/HUB_GAMES"
