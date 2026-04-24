@@ -1,0 +1,23 @@
+name: Project Automation
+
+on:
+  issues:
+    types: [opened, assigned]
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  project-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move to In Progress
+        if: github.event.action == 'assigned'
+        run: echo "Issue asignado - mover card a In Progress"
+
+      - name: Move to Review
+        if: github.event.action == 'opened' && github.event_name == 'pull_request'
+        run: echo "PR abierto - mover card a Review"
+
+      - name: Move to Done
+        if: github.event.pull_request.merged == true
+        run: echo "PR mergeado - mover card a Done"
