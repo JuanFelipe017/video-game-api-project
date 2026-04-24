@@ -9,21 +9,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # 1. Esto le dice a GitHub que TODOS los comandos 'run' se ejecuten aquí
+    defaults:
+      run:
+        working-directory: frontend/HUB_GAMES
+
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Actualizado a v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # Actualizado a v4
         with:
           node-version: '18'
 
       - name: Instalar dependencias
         run: npm install
-        working-directory: frontend/HUB_GAMES
 
       - name: Ejecutar tests
         run: npm test --if-present
 
       - name: Build exitoso
-        run: echo "Build completado correctamente"
+        run: echo "Build completado correctamente en frontend/HUB_GAMES"
