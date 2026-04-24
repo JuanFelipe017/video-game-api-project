@@ -1,17 +1,34 @@
-FROM node:20-slim AS build
+# ---- Build Stage ----
+FROM node:20-alpine AS builder
+
 WORKDIR /app
+
+# Copiar dependencias primero (mejor cache)
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci
+
+# Copiar el resto del proyecto
 COPY . .
-ENV PUBLIC_API_URL=https://gamehub-backend-556939640766.us-central1.run.app
+
+# Build de Astro
 RUN npm run build
 
-FROM node:20-slim
+# ---- Production Stage ----
+FROM node:20-alpine AS runner
+
 WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./package.json
+
+# Copiar solo lo necesario del build
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+# Instalar solo dependencias de producción
+RUN npm ci --omit=dev
+
+# Cloud Run usa la variable PORT (por defecto 8080)
 ENV HOST=0.0.0.0
 ENV PORT=8080
+
 EXPOSE 8080
+
 CMD ["node", "./dist/server/entry.mjs"]
