@@ -40,4 +40,4 @@ jobs:
         with:
           service: gamehub-front-back
           region: us-central1
-          source: ./frontend
+          source: ./frontend/HUB_GAMES
