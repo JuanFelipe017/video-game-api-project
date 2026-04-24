@@ -41,4 +41,5 @@ jobs:
           service: gamehub-front-back
           region: us-central1
           source: ./frontend/HUB_GAMES
-          
+          env_vars: |
+            PUBLIC_API_URL=${{ vars.PUBLIC_API_URL }}
