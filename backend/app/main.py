@@ -12,12 +12,14 @@ app = FastAPI(title="GameHub API", version="1.0.0") # Configuración básica de 
 # CORS: permite que el frontend consuma la API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://gamehub-front-back-556939640766.us-central1.run.app",
+        "http://localhost:4321",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*", "x-user-id"],  
+    allow_headers=["*", "x-user-id"],
 )
-
 # Agrega los routers de las rutas de usuarios, favoritos y juegos, con sus respectivos prefijos.
 app.include_router(users.router,     prefix="/api/users")
 app.include_router(favorites.router, prefix="/api/favorites")
