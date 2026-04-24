@@ -2,7 +2,7 @@ cat > frontend/HUB_GAMES/Dockerfile << 'EOF'
 FROM node:20-slim AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install
 COPY . .
 ENV PUBLIC_API_URL=https://gamehub-backend-556939640766.us-central1.run.app
 RUN npm run build
