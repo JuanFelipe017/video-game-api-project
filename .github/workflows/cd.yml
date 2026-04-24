@@ -19,6 +19,6 @@ jobs:
       - name: Deploy a Cloud Run
         uses: google-github-actions/deploy-cloudrun@v1
         with:
-          service: video-game-api
+          service: gamehub-backend
           region: us-central1
           source: .
