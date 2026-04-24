@@ -11,8 +11,8 @@ RUN npm ci
 COPY . .
 
 # Se envia la variable de entorno al build time
-ARG PUBLIC_API_URL
-ENV PUBLIC_API_URL=$PUBLIC_API_URL
+ENV PUBLIC_API_URL=https://gamehub-backend-556939640766.us-central1.run.app
+
 
 # Build de Astro
 RUN npm run build
