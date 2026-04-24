@@ -1,6 +1,6 @@
 # 🎮 GameHub
 
-Plataforma web para descubrir, explorar y guardar videojuegos favoritos. Consume datos de la API pública de RAWG para construir una API propia con backend en FastAPI, base de datos PostgreSQL en Google Cloud SQL y frontend en Astro.js.
+Plataforma web para descubrir, explorar y guardar videojuegos favoritos. Consume datos de la API pública de RAWG para construir una API propia con backend en FastAPI, base de datos PostgreSQL en Google Cloud SQL y frontend en HTML/CSS/JavaScript.
 
 ---
 
@@ -8,9 +8,9 @@ Plataforma web para descubrir, explorar y guardar videojuegos favoritos. Consume
 
 | Integrante | Responsabilidad |
 |---|---|
-| Juan Felipe Vanegas Silva | Backend — FastAPI, endpoints, servicios / Frontend — JavaScript, HTML, CSS |
-| Diego Felipe Almanza Ruiz | Base de datos — PostgreSQL, GCP Cloud SQL, esquemas / Frontend — HTML |
-| Martin Elias Perez Mercado | Cloud Run, Frontend Astro.js, manejo de Astro, arreglos de peticiones entre back y front, API personal |
+| Juan Felipe Vanegas Silva | Backend — FastAPI, endpoints, servicios / Frontend — JavaScript|
+| Diego Felipe Almanza Ruiz | Base de datos — PostgreSQL, GCP Cloud SQL, esquemas / Frontend — HTML|
+| Dayana Michelle Pulido Moguea | GCP Cloud SQL, esquemas / Frontend — CSS|
 
 ---
 
@@ -20,22 +20,10 @@ Plataforma web para descubrir, explorar y guardar videojuegos favoritos. Consume
 |---|---|
 | Backend | FastAPI (Python 3.13) |
 | Base de datos | PostgreSQL 15 |
-| Frontend | Astro.js (migrado desde HTML/CSS/JavaScript vanilla) |
+| Frontend | HTML5 / CSS3 / JavaScript (Vanilla) |
 | Cloud | Google Cloud Platform (GCP) |
-| Contenedores | Docker + Cloud Run |
 | API externa | RAWG Video Games Database API |
 | Encriptación | bcrypt |
-
----
-
-## 📝 Nota sobre la migración del frontend
-
-El frontend fue desarrollado inicialmente en HTML, CSS y JavaScript vanilla. Durante el proceso de despliegue se encontraron problemas de compatibilidad con Cloud Storage (Mixed Content, manejo de módulos ES6) que dificultaron la integración con el backend. Por esta razón se tomó la decisión de migrar el frontend a **Astro.js**, lo que permitió:
-
-- Resolver los problemas de peticiones entre frontend y backend
-- Mejor manejo de variables de entorno (`PUBLIC_API_URL`)
-- Despliegue más sencillo mediante Docker en Cloud Run
-- Mejor estructura y organización del proyecto
 
 ---
 
@@ -44,24 +32,20 @@ El frontend fue desarrollado inicialmente en HTML, CSS y JavaScript vanilla. Dur
 | Servicio GCP | Uso |
 |---|---|
 | Cloud SQL | Instancia PostgreSQL — almacenamiento de usuarios, juegos y favoritos |
-| Cloud Run | Despliegue del backend FastAPI y frontend Astro.js |
-| Artifact Registry | Almacenamiento de imágenes Docker |
+| App Engine / Compute Engine | Despliegue del backend FastAPI |
+| Cloud Storage | Hosting del frontend estático |
 
 ---
 
 ## 🌐 URLs de acceso
 
+> Completar después del despliegue en GCP
+
 | Componente | URL |
 |---|---|
-| Frontend | `https://gamehub-front-back-556939640766.us-central1.run.app` |
-| Backend API | `https://gamehub-backend-556939640766.us-central1.run.app` |
-| Documentación Swagger | `https://gamehub-backend-556939640766.us-central1.run.app/docs` |
-
----
-
-## 🎥 Video de sustentación
-
-[Ver video de sustentación en Google Drive](https://drive.google.com/file/d/1C1AcDjtspgHwfZi2m_oIZE69abYrjaQG/view?usp=sharing)
+| Frontend | `https://[URL-PENDIENTE]` |
+| Backend API | `https://[URL-PENDIENTE]` |
+| Documentación Swagger | `https://[URL-PENDIENTE]/docs` |
 
 ---
 
@@ -73,13 +57,13 @@ El frontend fue desarrollado inicialmente en HTML, CSS y JavaScript vanilla. Dur
 └─────────────────────┬───────────────────────────────┘
                       │ HTTP/HTTPS
 ┌─────────────────────▼───────────────────────────────┐
-│         FRONTEND (GCP Cloud Run)                     │
-│              Astro.js (SSR)                          │
-│     /  /games  /login  /register  /favorites         │
+│          FRONTEND (GCP Cloud Storage)                │
+│        index.html / games.html / login.html          │
+│              HTML + CSS + JavaScript                 │
 └─────────────────────┬───────────────────────────────┘
                       │ REST API calls
 ┌─────────────────────▼───────────────────────────────┐
-│        BACKEND API (GCP Cloud Run)                   │
+│        BACKEND API (GCP App Engine)                  │
 │               FastAPI (Python)                       │
 │  /api/games  /api/users  /api/favorites              │
 └──────┬──────────────────────────┬───────────────────┘
@@ -88,29 +72,27 @@ El frontend fue desarrollado inicialmente en HTML, CSS y JavaScript vanilla. Dur
 │  GCP Cloud SQL  │    │    RAWG API (externa)        │
 │  PostgreSQL 15  │    │  api.rawg.io/api/games       │
 │                 │    │  (fuente de datos inicial)   │
-│  - users        │    └─────────────────────────────┘
+│  - users        │    └─────────────────────────────-┘
 │  - games        │
 │  - favorites    │
 │  - genres       │
 │  - platforms    │
 └─────────────────┘
 ```
-
 ---
 
 ## 💻 Instalación local
 
 ### Requisitos previos
 - Python 3.10+
-- Node.js 18+
 - PostgreSQL 15 (local o acceso a GCP Cloud SQL)
 - Git
 
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/JuanFelipe017/video-game-api-project.git
-cd video-game-api-project
+git clone https://github.com/[usuario]/proyecto-desarrollo.git
+cd proyecto-desarrollo
 ```
 
 ### 2. Configurar el backend
@@ -123,7 +105,7 @@ pip install -r requirements.txt
 Crear el archivo `backend/.env`:
 
 ```env
-RAWG_API_KEY=tu_api_key_personal  # Obtener en https://rawg.io/apidocs
+RAWG_API_KEY=fc7e8f3dd675402cb10794ff7f2e550a
 PGHOST=localhost
 PGPORT=5432
 PGUSER=tu_usuario
@@ -147,25 +129,65 @@ python -m uvicorn app.main:app --reload
 El backend queda disponible en: `http://localhost:8000`
 Documentación Swagger en: `http://localhost:8000/docs`
 
-### 5. Configurar y levantar el frontend
+### 5. Abrir el frontend
 
-```bash
-cd frontend/HUB_GAMES
-npm install
-npm run dev
-```
+Abrir `frontend/index.html` directamente en el navegador, o usar Live Server en VSCode.
 
-Crear el archivo `frontend/HUB_GAMES/.env`:
-
-```env
-PUBLIC_API_URL=http://localhost:8000
-```
+> **Nota:** Asegúrate de que `API_BASE` en `frontend/js/api.js` apunte a `http://localhost:8000/api` para desarrollo local.
 
 ---
 
 ## 🚀 Comandos de despliegue en GCP
 
-Ver la guía completa en [`docs/deployment-guide.md`](docs/deployment-guide.md)
+### Backend en App Engine
+
+```bash
+cd backend
+gcloud app deploy
+```
+
+### Frontend en Cloud Storage
+
+```bash
+cd frontend
+gsutil -m cp -r . gs://[NOMBRE-DEL-BUCKET]/
+gsutil iam ch allUsers:objectViewer gs://[NOMBRE-DEL-BUCKET]
+```
+
+### Base de datos Cloud SQL
+
+```bash
+# Conectar a la instancia
+gcloud sql connect gamehub-db --user=postgres
+
+# Ejecutar el schema
+\i database/schema.sql
+```
+
+---
+
+## 🔑 Credenciales de prueba
+
+| Campo | Valor |
+|---|---|
+| Email | `test@gamehub.com` |
+| Contraseña | `test123` |
+
+> Estas credenciales se crean ejecutando `database/seed.sql`
+
+---
+
+## 🖼️ Capturas de pantalla
+
+> Agregar capturas después del despliegue final
+
+| Vista | Descripción |
+|---|---|
+| `screenshots/index.png` | Página principal con juegos populares y nuevos lanzamientos |
+| `screenshots/games.png` | Explorador de juegos con búsqueda |
+| `screenshots/login.png` | Formulario de inicio de sesión |
+| `screenshots/register.png` | Formulario de registro |
+| `screenshots/favorites.png` | Lista de juegos favoritos del usuario |
 
 ---
 
@@ -178,77 +200,63 @@ Ver la guía completa en [`docs/deployment-guide.md`](docs/deployment-guide.md)
 | `Connection refused` en PostgreSQL | La BD local no estaba activa; se migró directamente a GCP Cloud SQL |
 | Imports incorrectos en Pylance | Las rutas de módulos no coincidían con la estructura real de carpetas (`app.config.database`, `app.services`, `app.models.schemas`) |
 | Contraseñas en texto plano | Se implementó encriptación con `bcrypt` en `auth_service.py` |
-| `Mixed Content` en Cloud Storage | El frontend en HTTPS intentaba llamar al backend en HTTP; se migró a Astro.js en Cloud Run |
-| `CORS error` entre frontend y backend | Se configuró `allow_origins` en `main.py` con el dominio real del frontend en Cloud Run |
-| Conflictos de ramas en Git | Se resolvió con `git reset --hard origin/dev_stable` para sincronizar master con la rama estable |
 
 ---
 
 ## 📁 Estructura del repositorio
 
 ```
-video-game-api-project/
+proyecto-desarrollo/
 ├── README.md
 ├── backend/
 │   ├── app/
 │   │   ├── config/
 │   │   │   └── database.py
 │   │   ├── controllers/
-│   │   │   ├── favorites_controller.py
 │   │   │   ├── games_controller.py
-│   │   │   └── users_controller.py
+│   │   │   ├── users_controller.py
+│   │   │   └── favorites_controller.py
 │   │   ├── middleware/
 │   │   │   └── auth_middleware.py
 │   │   ├── models/
 │   │   │   └── schemas.py
 │   │   ├── routes/
-│   │   │   ├── favorites.py
 │   │   │   ├── games.py
-│   │   │   └── users.py
+│   │   │   ├── users.py
+│   │   │   └── favorites.py
 │   │   ├── services/
 │   │   │   ├── auth_service.py
 │   │   │   ├── favorites_service.py
 │   │   │   └── rawg_service.py
 │   │   └── main.py
-│   ├── DOCKERFILE
 │   ├── .env
 │   └── requirements.txt
 ├── frontend/
-│   └── HUB_GAMES/
-│       ├── .astro/
-│       ├── public/
-│       │   ├── favicon.ico
-│       │   └── favicon.svg
-│       ├── src/
-│       │   ├── assets/
-│       │   │   ├── astro.svg
-│       │   │   └── background.svg
-│       │   ├── components/
-│       │   │   ├── FavoriteButton.tsx
-│       │   │   ├── FavoritesGrid.tsx
-│       │   │   ├── GameCard.tsx
-│       │   │   ├── LoginForm.tsx
-│       │   │   ├── NavBar.tsx
-│       │   │   └── Welcome.astro
-│       │   ├── layouts/
-│       │   │   └── MainLayout.astro
-│       │   ├── lib/
-│       │   ├── pages/
-│       │   ├── styles/
-│       │   └── types/
-│       ├── astro.config.mjs
-│       ├── package.json
-│       ├── tailwind.config.mjs
-│       └── tsconfig.json
+│   ├── assets/
+│   ├── css/
+│   │   ├── style.css
+│   │   ├── toast.css
+│   │   └── responsive.css
+│   ├── js/
+│   │   ├── api.js
+│   │   ├── auth.js
+│   │   ├── favorites.js
+│   │   ├── games.js
+│   │   ├── main.js
+│   │   └── toast.js
+│   ├── index.html
+│   ├── games.html
+│   ├── login.html
+│   ├── register.html
+│   └── favorites.html
 ├── database/
-│   ├── diagram.png
-│   ├── docker-compose.yml
 │   ├── schema.sql
-│   └── seed.sql
-└── docs/
-    ├── api-documentation.md
-    └── deployment-guide.md
+│   ├── seed.sql
+│   └── diagram.png
+├── docs/
+│   ├── api-documentation.md
+│   └── deployment-guide.md
+├── screenshots/
+└── video/
+    └── sustentacion.mp4
 ```
-<!--CI TEST -->
-#   t e s t   d e p l o y  
- 
