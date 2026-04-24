@@ -10,17 +10,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # 1. Esto le dice a GitHub que TODOS los comandos 'run' se ejecuten aquí
+    # ESTO ES LO IMPORTANTE: Define la carpeta para TODOS los pasos
     defaults:
       run:
         working-directory: frontend/HUB_GAMES
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4 # Actualizado a v4
+        uses: actions/checkout@v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4 # Actualizado a v4
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -31,4 +31,4 @@ jobs:
         run: npm test --if-present
 
       - name: Build exitoso
-        run: echo "Build completado correctamente en frontend/HUB_GAMES"
+        run: echo "Build completado correctamente"
