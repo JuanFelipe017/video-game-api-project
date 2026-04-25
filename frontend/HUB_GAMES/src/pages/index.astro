@@ -27,7 +27,8 @@ try {
   }
 } catch (e) {
   fetchError = true;
-  console.error('Error al conectar con el backend:', e);
+  console.error('BASE URL:', import.meta.env.PUBLIC_API_URL);
+  console.error('Error completo:', e);
 }
 
 // Card grande = primer juego de popular o newReleases
