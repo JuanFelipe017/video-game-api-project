@@ -4,6 +4,16 @@ Esta carpeta contiene los flujos de trabajo automatizados del proyecto **GameHub
 
 ---
 
+## 👥 Equipo de Desarrollo
+
+| Integrante | Rol | Responsabilidades |
+|---|---|---|
+| **Juan Felipe Vanegas Silva** | Product Owner | Líder del repositorio, backend (FastAPI, endpoints, servicios), JavaScript, historias de usuario, documentación README |
+| **Martin Elias Perez Mercado** | DevOps Engineer | CI/CD con GitHub Actions, despliegue en GCP (Cloud Run), configuración Cloud SQL, GitHub Project (Kanban), automatización de workflows |
+| **Diego Felipe Almanza Ruiz** | Full Stack Developer | Base de datos (PostgreSQL, esquemas, GCP Cloud SQL), frontend HTML, gestión de ramas y Pull Requests, métricas del proyecto |
+
+---
+
 ## 📋 Workflows Implementados
 
 ### 1. 🔄 CI Pipeline (`ci.yml`)
