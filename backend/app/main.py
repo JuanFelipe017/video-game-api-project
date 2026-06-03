@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import users, favorites, games
+from app.routes import users, favorites, games, chatbot
 
 app = FastAPI(title="GameHub API", version="1.0.0") # Configuración básica de la app FastAPI.
 
@@ -24,6 +25,7 @@ app.add_middleware(
 app.include_router(users.router,     prefix="/api/users")
 app.include_router(favorites.router, prefix="/api/favorites")
 app.include_router(games.router,     prefix="/api/games")
+app.include_router(chatbot.router, prefix="/api/chat")
 
 # Ruta raíz para verificar que la API está corriendo, devuelve un mensaje simple.
 @app.get("/")

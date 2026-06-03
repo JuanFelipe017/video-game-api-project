@@ -1,10 +1,12 @@
 ---
 import "../styles/global.css";
+import ChatBot from '../components/ChatBot';
 interface Props {
 	title?: string;
 	description?: string;
+	showChat?: boolean;
 }
-const { title = "HUB GAMES", description = "Tu launcher de juegos personal" } =
+const { title = "HUB_GAMES", description = "Tu launcher de juegos personal", showChat = true } =
 	Astro.props;
 ---
 
@@ -32,6 +34,7 @@ const { title = "HUB GAMES", description = "Tu launcher de juegos personal" } =
 
 	<body class="bg-surface text-on-surface font-body min-h-screen antialiased">
 		<slot />
+		{showChat && <ChatBot client:load />}
 	</body>
 </html>
 
