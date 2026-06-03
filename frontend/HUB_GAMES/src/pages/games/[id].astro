@@ -3,20 +3,16 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import NavBar from '../../components/NavBar';
 import GameCard from '../../components/GameCard';
 import FavoriteButton from '../../components/FavoriteButton';
+import RelatedGames from '../../components/RelatedGames';
 import type { Game } from '../../types';
-import { getGame, getGames } from '../../lib/api';
+import { getGame } from '../../lib/api';
 
 const { id } = Astro.params;
 let game: Game | null = null;
-let related: Game[] = [];
 let error = false;
 
 try {
   game = await getGame(Number(id));
-  if (game && game.genres?.[0]) {
-    const data = await getGames(1, 5, game.genres[0].name);
-    related = data.results.filter((g) => g.id !== game!.id).slice(0, 4);
-  }
 } catch {
   error = true;
 }
@@ -30,7 +26,7 @@ const metacriticColor = game?.metacritic
   : '#8c909f';
 ---
 
-<MainLayout title={game ? `${game.name} — HUB_GAMES` : 'Juego no encontrado'}>
+<MainLayout title={game ? `${game.name} — HUB GAMES` : 'Juego no encontrado'}>
   <NavBar currentPath="/games" client:load />
 
   <style>
@@ -351,23 +347,9 @@ const metacriticColor = game?.metacritic
           </aside>
         </div>
 
-        <!-- ═══════════ TAMBIÉN TE PUEDE GUSTAR ═══════════ -->
-        {related.length > 0 && (
-          <section class="max-w-screen-xl mx-auto px-8 mt-20 pt-14" style="border-top:1px solid rgba(66,71,84,0.28);">
-            <div class="flex items-center gap-4 mb-6">
-              <div class="pulse-dot"/>
-              <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.18em;text-transform:uppercase;font-size:0.65rem;color:#4ae176;">Descubre más</span>
-              <div style="flex:1;height:1px;background:linear-gradient(to right,rgba(74,225,118,0.25),transparent);"/>
-            </div>
-            <h2 class="hero-title text-on-surface mb-10" style="font-size:clamp(2.2rem,5vw,4rem);">
-              También te puede gustar
-            </h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-              {related.map((g) => (
-                <GameCard game={g} client:load />
-              ))}
-            </div>
-          </section>
+        <!-- ═══════════ TAMBIÉN TE PUEDE GUSTAR (isla async) ═══════════ -->
+        {game.genres?.[0] && (
+          <RelatedGames genre={game.genres[0].name} currentGameId={game.id} client:load />
         )}
       </>
     )}

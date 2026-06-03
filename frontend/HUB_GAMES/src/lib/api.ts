@@ -22,6 +22,16 @@ export async function getNewReleases(page = 1, pageSize = 20): Promise<GamesResp
     return res.json();
 }
 
+export async function getGamesByGenre(
+    genreName: string,
+    page = 1,
+    pageSize = 20
+): Promise<GamesResponse> {
+    const res = await fetch(`${BASE}/api/games/by-genre/${encodeURIComponent(genreName)}?page=${page}&page_size=${pageSize}`);
+    if (!res.ok) throw new Error(`Error al obtener juegos por género: ${res.status}`);
+    return res.json();
+}
+
 export async function getGame(id: number): Promise<Game> {
     const res = await fetch(`${BASE}/api/games/${id}`);
     if (!res.ok) throw new Error(`Juego no encontrado: ${res.status}`);

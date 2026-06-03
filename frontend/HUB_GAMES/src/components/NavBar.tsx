@@ -41,9 +41,11 @@ export default function NavBar({ currentPath = '/' }: Props) {
     return (
         <nav className="fixed top-0 w-full z-50 glass-panel shadow-2xl shadow-black/40">
             <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-8">
-                {/* Logo */}
+                {/* Logo usando el mismo de public favicons */}
+                <img src="/palanca.png" alt="Favicon" className="w-10 h-10" />
+
                 <a href="/" className="text-2xl font-black text-on-surface italic tracking-tighter font-headline shrink-0">
-                    HUB_GAMES
+                    HUB GAMES
                 </a>
 
                 {/* Links desktop */}

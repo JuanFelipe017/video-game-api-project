@@ -45,6 +45,17 @@ def import_game(rawg_id: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# GET /api/games/by-genre/{genre_name} — juegos por género (solo BD local, sin RAWG)
+@router.get("/by-genre/{genre_name}")
+def games_by_genre(
+    genre_name: str,
+    page:      int = Query(1,  ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    games = games_controller.get_games_by_genre(genre_name, page, page_size)
+    return {"page": page, "page_size": page_size, "results": games}
+
+
 # PUT /api/games/{id} — actualizar un juego
 @router.put("/{game_id}")
 def update_game(game_id: int, body: GameUpdate):
