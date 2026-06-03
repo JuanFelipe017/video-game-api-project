@@ -15,8 +15,8 @@ load_dotenv()
 router = APIRouter()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL   = "llama-3.3-70b-versatile"
+GROQ_API_URL = os.getenv("GROQ_API_URL")
+GROQ_MODEL   = os.getenv("GROQ_MODEL")
 
 
 class ChatHistoryMessage(BaseModel):
