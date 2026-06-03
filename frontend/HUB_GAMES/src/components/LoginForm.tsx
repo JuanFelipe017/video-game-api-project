@@ -57,7 +57,7 @@ export default function LoginForm() {
                 {/* Logo */}
                 <div className="text-center mb-10">
                     <a href="/" className="text-3xl font-black italic tracking-tighter font-headline text-on-surface">
-                        HUB_GAMES
+                        HUB GAMES
                     </a>
                     <p className="text-on-surface-variant mt-2 text-sm">
                         {mode === 'login' ? 'Bienvenido de vuelta' : 'Crea tu cuenta'}

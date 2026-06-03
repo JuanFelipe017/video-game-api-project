@@ -212,20 +212,59 @@ def delete_game(game_id: int) -> bool:
 
 # Función específica para importar lanzamientos recientes de RAWG, guardarlos y devolverlos.
 def get_new_releases_controller(page: int = 1, page_size: int = 20) -> list:
-    """Importa los lanzamientos recientes de RAWG y los devuelve."""
+    """Devuelve lanzamientos recientes. Primero intenta desde la BD local,
+    si no hay datos los trae de RAWG, los guarda y los devuelve."""
     conn = get_connection()
     try:
+        offset = (page - 1) * page_size
+
+        # 1. Intentar desde BD local primero
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT * FROM games
+                WHERE released IS NOT NULL
+                ORDER BY released DESC NULLS LAST
+                LIMIT %s OFFSET %s
+            """, (page_size, offset))
+            rows = cur.fetchall()
+
+        if rows:
+            return [_attach_relations(conn, _row_to_game(r)) for r in rows]
+
+        # 2. No hay datos cacheados → traer de RAWG
         rawg_games = rawg_service.get_new_releases(page, page_size)
         for g in rawg_games:
             _save_game(conn, g)
+
+        # 3. Re-consultar BD
         with conn.cursor() as cur:
-            offset = (page - 1) * page_size
             cur.execute("""
                 SELECT * FROM games
+                WHERE released IS NOT NULL
                 ORDER BY released DESC NULLS LAST
                 LIMIT %s OFFSET %s
             """, (page_size, offset))
             rows = cur.fetchall()
         return [_attach_relations(conn, _row_to_game(r)) for r in rows]
+    finally:
+        conn.close()
+
+def get_games_by_genre(genre_name: str, page: int = 1, page_size: int = 20) -> list:
+    """Devuelve juegos de un género desde la BD local. Sin llamada a RAWG."""
+    conn = get_connection()
+    offset = (page - 1) * page_size
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT DISTINCT g.* FROM games g
+                JOIN game_genres gg ON gg.game_id = g.id
+                JOIN genres gn ON gn.id = gg.genre_id
+                WHERE gn.name ILIKE %s
+                ORDER BY g.rating DESC NULLS LAST
+                LIMIT %s OFFSET %s
+            """, (genre_name, page_size, offset))
+            rows = cur.fetchall()
+        games = [_attach_relations(conn, _row_to_game(r)) for r in rows]
+        return games
     finally:
         conn.close()
