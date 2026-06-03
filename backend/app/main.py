@@ -5,7 +5,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import users, favorites, games
 from app.routes import users, favorites, games, chatbot
 
 app = FastAPI(title="GameHub API", version="1.0.0") # Configuración básica de la app FastAPI.
