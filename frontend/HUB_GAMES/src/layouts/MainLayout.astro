@@ -1,13 +1,16 @@
 ---
 import "../styles/global.css";
-import ChatBot from '../components/ChatBot';
+import ChatBot from "../components/ChatBot";
 interface Props {
 	title?: string;
 	description?: string;
 	showChat?: boolean;
 }
-const { title = "HUB_GAMES", description = "Tu launcher de juegos personal", showChat = true } =
-	Astro.props;
+const {
+	title = "HUB GAMES",
+	description = "Tu launcher de juegos personal",
+	showChat = true,
+} = Astro.props;
 ---
 
 <!doctype html>
