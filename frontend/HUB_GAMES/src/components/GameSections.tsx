@@ -165,13 +165,13 @@ export default function GameSections({ search }: Props) {
             </div>
             <div className="flex items-center gap-3">
               <a
-                href="/"
+                href="/explore"
                 className="flex items-center gap-2 bg-surface-container-highest px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-bright transition-colors border border-outline-variant/15 text-on-surface-variant"
               >
                 <span className="material-symbols-outlined text-lg"
                 >explore</span
                 >
-                Explorar más
+                Ver más
               </a>
             </div>
           </div>
@@ -189,6 +189,17 @@ export default function GameSections({ search }: Props) {
             <div>
               <span className="text-secondary font-label uppercase tracking-widest text-xs font-bold mb-1 block">Destacados</span>
               <h2 className="text-2xl font-bold font-headline text-on-surface">Más populares</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <a
+                href="/explore"
+                className="flex items-center gap-2 bg-surface-container-highest px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-bright transition-colors border border-outline-variant/15 text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined text-lg"
+                >explore</span
+                >
+                Ver más
+              </a>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

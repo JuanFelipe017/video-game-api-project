@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getUser, clearUser } from '../lib/auth';
 import type { User } from '../types';
 
@@ -10,14 +10,28 @@ export default function NavBar({ currentPath = '/' }: Props) {
     const [user, setUser] = useState<User | null>(null);
     const [search, setSearch] = useState('');
     const [menuOpen, setMenuOpen] = useState(false);
+    const [avatarOpen, setAvatarOpen] = useState(false);
+    const avatarRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setUser(getUser());
     }, []);
 
+    useEffect(() => {
+        if (!avatarOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+                setAvatarOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [avatarOpen]);
+
     const handleLogout = () => {
         clearUser();
         setUser(null);
+        setAvatarOpen(false);
         window.location.href = '/login';
     };
 
@@ -30,12 +44,13 @@ export default function NavBar({ currentPath = '/' }: Props) {
 
     const navLinks = [
         { href: '/', label: 'Home' },
+        { href: '/explore', label: 'Explorar' },
         { href: '/favorites', label: 'Favorites' },
     ];
 
     const isActive = (href: string) => {
         if (href === '/') return currentPath === '/' || currentPath === '';
-        return currentPath.startsWith(href);
+        return currentPath === href || currentPath.startsWith(href + '/');
     };
 
     return (
@@ -85,17 +100,32 @@ export default function NavBar({ currentPath = '/' }: Props) {
 
                     {/* Usuario */}
                     {user ? (
-                        <div className="flex items-center gap-3">
-                            <span className="hidden sm:block text-sm text-on-surface-variant">
-                                {user.username}
-                            </span>
+                        <div ref={avatarRef} className="relative">
                             <button
-                                onClick={handleLogout}
-                                className="flex items-center gap-1 text-sm text-on-surface-variant hover:text-error transition-colors px-3 py-1.5 rounded-lg hover:bg-error-container/20"
+                                onClick={() => setAvatarOpen(!avatarOpen)}
+                                className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary/40 hover:ring-primary transition-all focus:outline-none"
                             >
-                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
-                                <span className="hidden sm:inline">Salir</span>
+                                <img
+                                    src="/face_login.webp"
+                                    alt={user.username}
+                                    className="w-full h-full object-cover"
+                                />
                             </button>
+                            {avatarOpen && (
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-low border border-outline-variant/15 rounded-xl shadow-2xl shadow-black/50 py-2 z-50">
+                                    <div className="px-4 py-2 border-b border-outline-variant/10">
+                                        <p className="text-sm font-medium text-on-surface truncate">{user.username}</p>
+                                        <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
+                                    </div>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
+                                        Cerrar sesión
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <a

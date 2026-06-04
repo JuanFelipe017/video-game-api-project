@@ -1,0 +1,44 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import NavBar from "../components/NavBar";
+import ExploreGrid from "../components/ExploreGrid";
+
+const initialQuery = Astro.url.searchParams.get("q") ?? "";
+---
+
+<MainLayout
+    title={initialQuery ? `"${initialQuery}" · Explorar — HUB GAMES` : "Explorar — HUB GAMES"}
+    description="Explora el catálogo completo de juegos disponibles en HUB GAMES"
+>
+    <NavBar currentPath="/explore" client:load />
+
+    <main class="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+        <!-- Header estático (instant render) -->
+        <header class="mb-10">
+            <span
+                class="text-secondary font-label uppercase tracking-widest text-sm font-bold mb-3 block"
+            >
+                Catálogo completo
+            </span>
+            <h1
+                class="text-5xl sm:text-6xl font-extrabold font-headline tracking-tight text-on-surface text-glow leading-tight"
+            >
+                Explorar
+                <span class="text-primary"> juegos</span>
+            </h1>
+            <p class="text-on-surface-variant mt-4 max-w-xl text-lg">
+                Descubre todos los juegos disponibles. Desplázate para cargar más
+                resultados.
+            </p>
+        </header>
+
+        <!-- Grid con scroll infinito + caché -->
+        <ExploreGrid client:load initialQuery={initialQuery} />
+    </main>
+
+    <footer
+        class="py-12 px-8 text-center text-on-surface-variant/40 text-xs tracking-widest uppercase border-t border-outline-variant/10"
+    >
+        © {new Date().getFullYear()} HUB GAMES — All Systems Operational
+    </footer>
+</MainLayout>

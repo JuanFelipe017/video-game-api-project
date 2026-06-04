@@ -1,0 +1,671 @@
+---
+/**
+ * BackgroundScene.astro
+ * ─────────────────────────────────────────────────────────────────────────
+ * Fondo animado global de la app, basado en Canvas 2D puro (sin GSAP).
+ *
+ * Capas:
+ *   1. (CSS) Fondo #020113f1 — base oscura con ligera transparencia.
+ *   2. (canvas: stars) ~180 estrellas con parpadeo sinusoidal.
+ *   3. (canvas: stage) Estela + nave futurista.
+ *
+ * Comportamiento de la nave:
+ *   - Modo 'idle' los primeros 500 ms (quieta, ligera rotación).
+ *   - Modo 'auto': vuela entre waypoints aleatorios; nunca se detiene.
+ *   - Modo 'mouse': cuando el cursor está sobre la escena y se movió en
+ *     los últimos 2 s, sigue al cursor con lerp 0.07.
+ *   - Rotación angular interpolada (shortest path) — nunca salta 360°.
+ *   - Físicas: aceleración, velocidad máxima, fricción, frenado al llegar.
+ *   - Rebota en los bordes con damping 0.8.
+ *
+ * Compatibilidad:
+ *   - Mouse (mousemove/enter/leave) y touch (touchstart/move/end).
+ *   - prefers-reduced-motion: pausa la animación, nave congelada.
+ *   - ResizeObserver para layout responsivo.
+ *   - DPR scaling para nitidez en HiDPI.
+ *
+ * Props:
+ *   - showBackground: si es false, no se renderiza ni se ejecuta el script.
+ *   - starCount: override manual del número de estrellas.
+ */
+
+interface Props {
+    showBackground?: boolean;
+    starCount?: number;
+}
+
+const { showBackground = true, starCount = 180 } = Astro.props;
+void starCount;
+---
+
+{showBackground && (
+    <div class="bg-scene" data-bg-scene aria-hidden="true">
+        <canvas class="bg-layer" data-bg-stars></canvas>
+        <canvas class="bg-layer" data-bg-stage></canvas>
+    </div>
+)}
+
+<style>
+    .bg-scene {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+        background: #020113f1;
+    }
+
+    .bg-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bg-scene {
+            background: #020113;
+        }
+    }
+</style>
+
+<script>
+    // ── Constantes ──────────────────────────────────────────────────────────
+    const STAR_COUNT_DEFAULT = 180;
+    const STAR_COUNT_MOBILE = 90;
+    const TRAIL_MAX_DEFAULT = 80;
+    const TRAIL_MAX_MOBILE = 50;
+    const MAX_SPEED = 5.5;
+    const SHIP_ACCEL = 0.32;
+    const SHIP_FRICTION = 0.96;
+    const ARRIVE_RADIUS = 6;
+    const EDGE_MARGIN = 30;
+    const WAYPOINT_MARGIN = 60;
+    const MOUSE_TIMEOUT_MS = 2000;
+    const AUTO_START_DELAY_MS = 500;
+    const STRIPE_SPEED = 0.15;
+    const MOBILE_BREAKPOINT = 768;
+
+    // ── Estado (módulo-scope) ──────────────────────────────────────────────
+    const state = {
+        W: 0,
+        H: 0,
+        dpr: 1,
+        isMobile: false,
+        starCount: STAR_COUNT_DEFAULT,
+        trailMax: TRAIL_MAX_DEFAULT,
+        stars: [] as Array<{
+            x: number;
+            y: number;
+            r: number;
+            baseAlpha: number;
+            phase: number;
+            speed: number;
+            tint: string;
+        }>,
+        ship: {
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            mode: 'idle',
+        },
+        trail: [] as Array<{ x: number; y: number }>,
+        waypoint: null as { x: number; y: number } | null,
+        mouse: { x: 0, y: 0, inside: false, lastMove: 0 },
+        stripeOffset: 0,
+        lastTime: 0,
+        running: false,
+        rafId: 0,
+        reducedMotion: false,
+    };
+
+    // ── Bootstrap ───────────────────────────────────────────────────────────
+    const scene = document.querySelector('[data-bg-scene]') as HTMLElement | null;
+    if (scene) init();
+
+    function init() {
+        const sceneEl: HTMLElement = scene!;
+        const starsCanvas = sceneEl.querySelector('[data-bg-stars]') as HTMLCanvasElement | null;
+        const stageCanvas = sceneEl.querySelector('[data-bg-stage]') as HTMLCanvasElement | null;
+        if (!starsCanvas || !stageCanvas) return;
+
+        const starsCtx = starsCanvas.getContext('2d', { alpha: true });
+        const stageCtx = stageCanvas.getContext('2d', { alpha: true });
+        if (!starsCtx || !stageCtx) return;
+
+        state.reducedMotion =
+            window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+        bindResize(sceneEl, starsCanvas, stageCanvas, starsCtx, stageCtx);
+        generateStars();
+        resetShip();
+
+        // Modo auto arranca a los 500ms
+        if (!state.reducedMotion) {
+            setTimeout(() => {
+                if (state.ship.mode === 'idle') {
+                    state.ship.mode = 'auto';
+                    pickWaypoint();
+                }
+            }, AUTO_START_DELAY_MS);
+        } else {
+            // Reduced motion: queda en idle congelado
+            state.ship.mode = 'idle';
+        }
+
+        bindEvents(starsCanvas);
+
+        state.running = true;
+        state.lastTime = performance.now();
+        state.rafId = requestAnimationFrame((t) => loop(t, starsCtx, stageCtx));
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                state.running = false;
+                cancelAnimationFrame(state.rafId);
+            } else if (!state.running) {
+                state.running = true;
+                state.lastTime = performance.now();
+                state.rafId = requestAnimationFrame((t) => loop(t, starsCtx, stageCtx));
+            }
+        });
+    }
+
+    // ── Resize / DPR ───────────────────────────────────────────────────────
+    function bindResize(
+        sceneEl: HTMLElement,
+        starsCanvas: HTMLCanvasElement,
+        stageCanvas: HTMLCanvasElement,
+        starsCtx: CanvasRenderingContext2D,
+        stageCtx: CanvasRenderingContext2D,
+    ) {
+        const apply = () => {
+            state.dpr = Math.min(2, window.devicePixelRatio || 1);
+            state.isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+            state.starCount = state.isMobile ? STAR_COUNT_MOBILE : STAR_COUNT_DEFAULT;
+            state.trailMax = state.isMobile ? TRAIL_MAX_MOBILE : TRAIL_MAX_DEFAULT;
+
+            // Si cambia el conteo, regenerar
+            if (state.stars.length !== state.starCount) {
+                generateStars();
+            }
+
+            const rect = sceneEl.getBoundingClientRect();
+            state.W = rect.width;
+            state.H = rect.height;
+
+            for (const c of [starsCanvas, stageCanvas]) {
+                c.width = Math.max(1, Math.floor(state.W * state.dpr));
+                c.height = Math.max(1, Math.floor(state.H * state.dpr));
+                c.style.width = state.W + 'px';
+                c.style.height = state.H + 'px';
+            }
+            starsCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+            stageCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+            // Reclamp nave dentro de los nuevos límites
+            state.ship.x = Math.min(state.W - EDGE_MARGIN, Math.max(EDGE_MARGIN, state.ship.x));
+            state.ship.y = Math.min(state.H - EDGE_MARGIN, Math.max(EDGE_MARGIN, state.ship.y));
+        };
+
+        apply();
+        const ro = new ResizeObserver(apply);
+        ro.observe(sceneEl);
+    }
+
+    // ── Estrellas ──────────────────────────────────────────────────────────
+    function generateStars() {
+        state.stars.length = 0;
+        for (let i = 0; i < state.starCount; i++) {
+            const r = Math.random() * 1.2 + 0.3;
+            const baseAlpha = Math.random() * 0.4 + 0.1;
+            const phase = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 1.5 + 0.5;
+            const tintRoll = Math.random();
+            const tint =
+                tintRoll < 0.7
+                    ? '#ffffff'
+                    : tintRoll < 0.85
+                      ? '#a8c0ff'
+                      : '#d4e4ff';
+            state.stars.push({
+                x: Math.random() * state.W,
+                y: Math.random() * state.H,
+                r,
+                baseAlpha,
+                phase,
+                speed,
+                tint,
+            });
+        }
+    }
+
+    function drawStars(ctx: CanvasRenderingContext2D, time: number) {
+        ctx.clearRect(0, 0, state.W, state.H);
+        for (let i = 0; i < state.stars.length; i++) {
+            const s = state.stars[i];
+            let alpha = s.baseAlpha;
+            if (!state.reducedMotion) {
+                alpha += 0.3 * Math.sin(time * 0.001 * s.speed + s.phase);
+            }
+            if (alpha < 0) alpha = 0;
+            if (alpha > 1) alpha = 1;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = s.tint;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    // ── Ship state ─────────────────────────────────────────────────────────
+    function resetShip() {
+        state.ship.x = state.W / 2;
+        state.ship.y = state.H / 2;
+        state.ship.vx = 0;
+        state.ship.vy = 0;
+        state.ship.angle = 0;
+        state.ship.mode = 'idle';
+        state.trail.length = 0;
+    }
+
+    function pickWaypoint() {
+        state.waypoint = {
+            x: WAYPOINT_MARGIN + Math.random() * (state.W - WAYPOINT_MARGIN * 2),
+            y: WAYPOINT_MARGIN + Math.random() * (state.H - WAYPOINT_MARGIN * 2),
+        };
+    }
+
+    function getNextTarget(): { x: number; y: number } {
+        if (
+            !state.waypoint ||
+            Math.hypot(state.ship.x - state.waypoint.x, state.ship.y - state.waypoint.y) <
+                ARRIVE_RADIUS
+        ) {
+            pickWaypoint();
+        }
+        return state.waypoint!;
+    }
+
+    function updateShip() {
+        if (state.ship.mode === 'idle') {
+            // Ligera rotación mientras está quieta
+            state.ship.angle += 0.0015;
+            return;
+        }
+
+        const now = performance.now();
+        const mouseActive =
+            state.mouse.inside && now - state.mouse.lastMove < MOUSE_TIMEOUT_MS;
+        const target =
+            mouseActive && state.ship.mode === 'mouse' ? state.mouse : getNextTarget();
+
+        // Steer
+        const dx = target.x - state.ship.x;
+        const dy = target.y - state.ship.y;
+        const dist = Math.hypot(dx, dy);
+
+        // Rotación suavizada (shortest path)
+        const targetAngle = Math.atan2(dy, dx);
+        let diff = targetAngle - state.ship.angle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        state.ship.angle += diff * 0.10;
+
+        // Aceleración con frenado al acercarse
+        const arrive = Math.min(1, dist / 40);
+        const force = SHIP_ACCEL * arrive;
+        state.ship.vx += Math.cos(state.ship.angle) * force;
+        state.ship.vy += Math.sin(state.ship.angle) * force;
+
+        // Cap velocidad
+        const speed = Math.hypot(state.ship.vx, state.ship.vy);
+        if (speed > MAX_SPEED) {
+            state.ship.vx = (state.ship.vx / speed) * MAX_SPEED;
+            state.ship.vy = (state.ship.vy / speed) * MAX_SPEED;
+        }
+
+        // Fricción
+        state.ship.vx *= SHIP_FRICTION;
+        state.ship.vy *= SHIP_FRICTION;
+
+        // Posición
+        state.ship.x += state.ship.vx;
+        state.ship.y += state.ship.vy;
+
+        // Rebote en bordes
+        if (state.ship.x < EDGE_MARGIN) {
+            state.ship.x = EDGE_MARGIN;
+            state.ship.vx = Math.abs(state.ship.vx) * 0.8;
+        }
+        if (state.ship.x > state.W - EDGE_MARGIN) {
+            state.ship.x = state.W - EDGE_MARGIN;
+            state.ship.vx = -Math.abs(state.ship.vx) * 0.8;
+        }
+        if (state.ship.y < EDGE_MARGIN) {
+            state.ship.y = EDGE_MARGIN;
+            state.ship.vy = Math.abs(state.ship.vy) * 0.8;
+        }
+        if (state.ship.y > state.H - EDGE_MARGIN) {
+            state.ship.y = state.H - EDGE_MARGIN;
+            state.ship.vy = -Math.abs(state.ship.vy) * 0.8;
+        }
+
+        // Trail
+        state.trail.push({ x: state.ship.x, y: state.ship.y });
+        if (state.trail.length > state.trailMax) state.trail.shift();
+    }
+
+    // ── Render: stage (estela + nave) ──────────────────────────────────────
+    function drawStage(ctx: CanvasRenderingContext2D) {
+        ctx.clearRect(0, 0, state.W, state.H);
+
+        const speed = Math.hypot(state.ship.vx, state.ship.vy);
+        const speedFactor = Math.min(1, speed / MAX_SPEED);
+
+        // Stripe offset animación
+        if (!state.reducedMotion) {
+            state.stripeOffset += STRIPE_SPEED;
+        }
+
+        drawTrail(ctx, speedFactor);
+        drawShip(ctx, speedFactor);
+    }
+
+    function drawTrail(ctx: CanvasRenderingContext2D, speedFactor: number) {
+        if (state.trail.length < 2) return;
+
+        // Líneas conectadas con gradiente azul → cian
+        for (let i = 1; i < state.trail.length; i++) {
+            const p0 = state.trail[i - 1];
+            const p1 = state.trail[i];
+            const t = i / state.trail.length;
+            const a = 0.1 + 0.6 * t * speedFactor;
+            const w = 0.5 + 2 * t * speedFactor;
+            const r = Math.floor(80 + 175 * t);
+            const g = Math.floor(180 + 75 * t);
+            ctx.strokeStyle = `rgba(${r}, ${g}, 255, ${a})`;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y);
+            ctx.lineTo(p1.x, p1.y);
+            ctx.stroke();
+        }
+
+        // Partículas dispersas
+        if (speedFactor > 0.3) {
+            for (let i = 0; i < state.trail.length; i += 4) {
+                const p = state.trail[i];
+                const jx = (Math.random() - 0.5) * 6;
+                const jy = (Math.random() - 0.5) * 6;
+                ctx.fillStyle = `rgba(0, 217, 255, ${0.4 * speedFactor})`;
+                ctx.beginPath();
+                ctx.arc(p.x + jx, p.y + jy, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Halo en la punta
+        const tip = state.trail[state.trail.length - 1];
+        const haloR = 25;
+        const grad = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, haloR);
+        grad.addColorStop(0, `rgba(0, 217, 255, ${0.4 * speedFactor})`);
+        grad.addColorStop(1, 'rgba(0, 217, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, haloR, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawShip(ctx: CanvasRenderingContext2D, speedFactor: number) {
+        const flameFlick = 1 + Math.random() * 0.15;
+        const flameLen = (20 + 38 * speedFactor) * flameFlick;
+
+        ctx.save();
+        ctx.translate(state.ship.x, state.ship.y);
+        ctx.rotate(state.ship.angle);
+
+        // ── Llama motor central (atrás) ──────────────────────────────
+        const mainFlameGrad = ctx.createLinearGradient(-12, 0, -12 - flameLen, 0);
+        mainFlameGrad.addColorStop(0, 'rgba(0, 217, 255, 0.95)');
+        mainFlameGrad.addColorStop(0.4, 'rgba(120, 230, 255, 0.7)');
+        mainFlameGrad.addColorStop(0.8, 'rgba(220, 240, 255, 0.3)');
+        mainFlameGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = mainFlameGrad;
+        ctx.beginPath();
+        ctx.moveTo(-12, -3);
+        ctx.lineTo(-12 - flameLen, 0);
+        ctx.lineTo(-12, 3);
+        ctx.closePath();
+        ctx.fill();
+
+        // ── Llamas de los motores laterales (en las alas) ────────────
+        if (Math.random() < 0.7) {
+            const wingFlameLen = 6 + 10 * speedFactor;
+            const wfg = ctx.createLinearGradient(-20, 0, -20 - wingFlameLen, 0);
+            wfg.addColorStop(0, 'rgba(0, 217, 255, 0.85)');
+            wfg.addColorStop(1, 'rgba(0, 217, 255, 0)');
+            ctx.fillStyle = wfg;
+            // Ala superior
+            ctx.beginPath();
+            ctx.moveTo(-20, -8);
+            ctx.lineTo(-20 - wingFlameLen, -10);
+            ctx.lineTo(-20, -12);
+            ctx.closePath();
+            ctx.fill();
+            // Ala inferior
+            ctx.beginPath();
+            ctx.moveTo(-20, 8);
+            ctx.lineTo(-20 - wingFlameLen, 10);
+            ctx.lineTo(-20, 12);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ── Casco (Normandy-inspired) ────────────────────────────────
+        const hullGrad = ctx.createLinearGradient(0, -14, 0, 14);
+        hullGrad.addColorStop(0, 'rgba(140, 170, 220, 0.95)');
+        hullGrad.addColorStop(0.5, 'rgba(80, 110, 170, 0.95)');
+        hullGrad.addColorStop(1, 'rgba(50, 70, 120, 0.95)');
+
+        ctx.fillStyle = hullGrad;
+        ctx.strokeStyle = 'rgba(200, 230, 255, 0.6)';
+        ctx.lineWidth = 0.6;
+
+        ctx.beginPath();
+        // Nariz afilada
+        ctx.moveTo(28, 0);
+        ctx.lineTo(20, -2);
+        ctx.lineTo(14, -3);
+        // Cabina
+        ctx.lineTo(8, -3.5);
+        ctx.lineTo(0, -4);
+        ctx.lineTo(-6, -3.5);
+        ctx.lineTo(-10, -3);
+        // Ala superior (sweep back)
+        ctx.lineTo(-14, -5);
+        ctx.lineTo(-18, -10);
+        ctx.lineTo(-20, -14);
+        ctx.lineTo(-22, -14);
+        ctx.lineTo(-22, -10);
+        ctx.lineTo(-18, -5);
+        ctx.lineTo(-14, -3.5);
+        // Ala inferior
+        ctx.lineTo(-14, 3.5);
+        ctx.lineTo(-18, 5);
+        ctx.lineTo(-22, 10);
+        ctx.lineTo(-22, 14);
+        ctx.lineTo(-20, 14);
+        ctx.lineTo(-18, 10);
+        ctx.lineTo(-14, 5);
+        ctx.lineTo(-10, 3);
+        ctx.lineTo(-6, 3.5);
+        ctx.lineTo(0, 4);
+        ctx.lineTo(8, 3.5);
+        ctx.lineTo(14, 3);
+        ctx.lineTo(20, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // ── Stripes de energía en las alas (dasharray animado) ──────
+        ctx.strokeStyle = 'rgba(0, 217, 255, 1)';
+        ctx.lineWidth = 1.2;
+        ctx.shadowColor = 'rgba(0, 217, 255, 0.9)';
+        ctx.shadowBlur = 4;
+        ctx.setLineDash([3, 3]);
+        ctx.lineDashOffset = -state.stripeOffset;
+        ctx.beginPath();
+        ctx.moveTo(-10, -3);
+        ctx.lineTo(-20, -13);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-10, 3);
+        ctx.lineTo(-20, 13);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.shadowBlur = 0;
+
+        // ── Cabina (cúpula con gradiente) ────────────────────────────
+        const domeGrad = ctx.createRadialGradient(10, -1, 0.5, 10, 0, 6);
+        domeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        domeGrad.addColorStop(0.4, 'rgba(180, 220, 255, 0.85)');
+        domeGrad.addColorStop(1, 'rgba(80, 140, 200, 0.5)');
+        ctx.fillStyle = domeGrad;
+        ctx.beginPath();
+        ctx.ellipse(10, 0, 6, 3.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(150, 200, 255, 0.6)';
+        ctx.lineWidth = 0.4;
+        ctx.stroke();
+
+        // ── Líneas de panel ─────────────────────────────────────────
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(-2, -3.5);
+        ctx.lineTo(-2, 3.5);
+        ctx.moveTo(-6, -3);
+        ctx.lineTo(-6, 3);
+        ctx.moveTo(-10, -2.5);
+        ctx.lineTo(-10, 2.5);
+        ctx.stroke();
+
+        // ── Luces de navegación (roja babor, verde estribor) ────────
+        ctx.fillStyle = 'rgba(255, 80, 80, 1)';
+        ctx.shadowColor = 'rgba(255, 80, 80, 1)';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(-4, 4, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(80, 255, 120, 1)';
+        ctx.shadowColor = 'rgba(80, 255, 120, 1)';
+        ctx.beginPath();
+        ctx.arc(-4, -4, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // ── Punto de brillo en la punta de la nariz ────────────────
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.shadowColor = 'rgba(173, 217, 255, 1)';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(28, 0, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+    }
+
+    // ── Eventos ────────────────────────────────────────────────────────────
+    function bindEvents(starsCanvas: HTMLCanvasElement) {
+        const setMouseFromEvent = (clientX: number, clientY: number) => {
+            const rect = starsCanvas.getBoundingClientRect();
+            state.mouse.x = clientX - rect.left;
+            state.mouse.y = clientY - rect.top;
+            state.mouse.lastMove = performance.now();
+        };
+
+        // Mouse
+        document.addEventListener('mousemove', (e) => {
+            if (state.reducedMotion) return;
+            // Solo activamos mouse-tracking si el cursor está sobre la ventana visible
+            // (no exigimos hover en la escena porque la escena es fixed y pointer-events:none)
+            setMouseFromEvent(e.clientX, e.clientY);
+            if (state.ship.mode === 'auto') {
+                state.ship.mode = 'mouse';
+            }
+        });
+        document.addEventListener('mouseleave', () => {
+            state.mouse.inside = false;
+            if (state.ship.mode === 'mouse') {
+                state.ship.mode = 'auto';
+                pickWaypoint();
+            }
+        });
+        document.addEventListener('mouseenter', () => {
+            state.mouse.inside = true;
+        });
+
+        // Touch
+        document.addEventListener(
+            'touchstart',
+            (e) => {
+                if (state.reducedMotion) return;
+                const t = e.touches[0];
+                if (t) {
+                    setMouseFromEvent(t.clientX, t.clientY);
+                    state.ship.mode = 'mouse';
+                }
+            },
+            { passive: true },
+        );
+        document.addEventListener(
+            'touchmove',
+            (e) => {
+                if (state.reducedMotion) return;
+                const t = e.touches[0];
+                if (t) {
+                    setMouseFromEvent(t.clientX, t.clientY);
+                }
+            },
+            { passive: true },
+        );
+        document.addEventListener('touchend', () => {
+            if (state.ship.mode === 'mouse') {
+                state.ship.mode = 'auto';
+                pickWaypoint();
+            }
+        });
+    }
+
+    // ── Loop ───────────────────────────────────────────────────────────────
+    function loop(
+        time: number,
+        starsCtx: CanvasRenderingContext2D,
+        stageCtx: CanvasRenderingContext2D,
+    ) {
+        if (!state.running) return;
+
+        // dt clamp para tab-switch (evita saltos grandes)
+        const _dt = Math.min(40, time - state.lastTime);
+        void _dt;
+        state.lastTime = time;
+
+        if (!state.reducedMotion) {
+            drawStars(starsCtx, time);
+            updateShip();
+            drawStage(stageCtx);
+        } else {
+            // Render congelado: una sola vez, sin update
+            drawStars(starsCtx, time);
+            drawStage(stageCtx);
+        }
+
+        state.rafId = requestAnimationFrame((t) => loop(t, starsCtx, stageCtx));
+    }
+</script>

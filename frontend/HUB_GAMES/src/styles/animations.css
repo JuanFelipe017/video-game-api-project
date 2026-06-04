@@ -1,0 +1,357 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Auth Animations — Hub Games
+   Utilidades reutilizables para fondo animado, glow, shimmer, etc.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+    --color-neon-cyan: #00d9ff;
+    --color-neon-blue: #4d8eff;
+    --color-neon-purple: #a78bfa;
+    --color-neon-magenta: #ff4dd8;
+    --color-dark-bg: #050816;
+    --color-dark-card: #0d1228;
+    --color-text-light: #e0e8ff;
+    --color-text-muted: #8b92a8;
+
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@layer base {
+    html, body {
+        background-color: var(--color-dark-bg);
+    }
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+
+@keyframes neonGlow {
+    0%, 100% {
+        text-shadow:
+            0 0 10px rgba(0, 217, 255, 0.6),
+            0 0 20px rgba(77, 142, 255, 0.45),
+            0 0 40px rgba(167, 139, 250, 0.25);
+    }
+    50% {
+        text-shadow:
+            0 0 18px rgba(0, 217, 255, 0.9),
+            0 0 36px rgba(77, 142, 255, 0.6),
+            0 0 72px rgba(167, 139, 250, 0.4);
+    }
+}
+
+@keyframes gradientShift {
+    0%   { background-position:   0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position:   0% 50%; }
+}
+
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+
+@keyframes float-up {
+    0%   { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan-line {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+}
+
+@keyframes grid-drift {
+    0%   { transform: translate(0, 0); }
+    100% { transform: translate(60px, 60px); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), 0 0 40px rgba(77, 142, 255, 0.2); }
+    50%      { box-shadow: 0 0 30px rgba(0, 217, 255, 0.5), 0 0 60px rgba(77, 142, 255, 0.35); }
+}
+
+/* ── Components ─────────────────────────────────────────────────────────── */
+
+@layer components {
+
+    /* Card gamer con borde neon sutil y glass */
+    .gamer-card {
+        position: relative;
+        background: linear-gradient(
+            180deg,
+            rgba(13, 18, 40, 0.85) 0%,
+            rgba(11, 19, 38, 0.92) 100%
+        );
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid rgba(0, 217, 255, 0.18);
+        border-radius: 1.25rem;
+        box-shadow:
+            0 20px 60px -10px rgba(0, 0, 0, 0.6),
+            0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+            0 0 40px rgba(0, 217, 255, 0.08);
+    }
+
+    /* Glow en el titulo HUB GAMES */
+    .title-glow {
+        animation: neonGlow 4.5s ease-in-out infinite;
+    }
+
+    /* Background base con gradiente animado */
+    .animated-gradient {
+        background: linear-gradient(
+            -45deg,
+            #050816,
+            #0c1230,
+            #1a0a3a,
+            #061226,
+            #0a0820,
+            #050816
+        );
+        background-size: 400% 400%;
+        animation: gradientShift 24s ease infinite;
+        mix-blend-mode: screen;
+        opacity: 0.55;
+    }
+
+    /* Grid cyberpunk animado */
+    .cyber-grid {
+        position: absolute;
+        inset: -60px;
+        background-image:
+            linear-gradient(rgba(0, 217, 255, 0.22) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 217, 255, 0.22) 1px, transparent 1px);
+        background-size: 60px 60px;
+        mask-image: radial-gradient(ellipse at center, black 35%, transparent 78%);
+        -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 78%);
+        animation: grid-drift 22s linear infinite;
+    }
+
+    /* Scan line para acentuar el caracter cyberpunk */
+    .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 217, 255, 0.55),
+            transparent
+        );
+        filter: blur(0.5px);
+        animation: scan-line 10s linear infinite;
+        opacity: 0.6;
+    }
+
+    /* Inputs con focus neon */
+    .gamer-input {
+        background: rgba(11, 19, 38, 0.6);
+        border: 1px solid rgba(0, 217, 255, 0.15);
+        color: var(--color-text-light);
+        transition: all 0.32s var(--ease-smooth);
+    }
+    .gamer-input::placeholder {
+        color: rgba(139, 146, 168, 0.7);
+    }
+    .gamer-input:hover {
+        border-color: rgba(0, 217, 255, 0.35);
+    }
+    .gamer-input:focus {
+        outline: none;
+        border-color: var(--color-neon-cyan);
+        background: rgba(11, 19, 38, 0.85);
+        box-shadow:
+            0 0 0 3px rgba(0, 217, 255, 0.12),
+            0 0 18px rgba(0, 217, 255, 0.25);
+        transform: scale(1.01);
+    }
+
+    /* Botón primario con gradiente gamer */
+    .gamer-btn-primary {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #4d8eff 0%, #00d9ff 100%);
+        color: #050816;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow:
+            0 8px 30px -6px rgba(0, 217, 255, 0.5),
+            0 0 0 1px rgba(0, 217, 255, 0.25) inset;
+        transition: transform 0.32s var(--ease-smooth), box-shadow 0.32s var(--ease-smooth);
+    }
+    .gamer-btn-primary::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            120deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.45) 50%,
+            transparent 70%
+        );
+        background-size: 200% 100%;
+        background-position: 200% 0;
+        pointer-events: none;
+        transition: background-position 0.6s ease;
+    }
+    .gamer-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 12px 36px -6px rgba(0, 217, 255, 0.7),
+            0 0 0 1px rgba(0, 217, 255, 0.35) inset,
+            0 0 24px rgba(0, 217, 255, 0.5);
+    }
+    .gamer-btn-primary:hover::before {
+        background-position: -200% 0;
+    }
+    .gamer-btn-primary:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    /* Botón social (Google/Apple) */
+    .gamer-social-btn {
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 0.75rem 1rem;
+        background: rgba(11, 19, 38, 0.55);
+        border: 1px solid rgba(0, 217, 255, 0.2);
+        border-radius: 0.75rem;
+        color: var(--color-text-light);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.38s var(--ease-smooth);
+        will-change: transform, box-shadow, border-color;
+    }
+    .gamer-social-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 217, 255, 0.08),
+            transparent
+        );
+        background-size: 200% 100%;
+        background-position: 200% 0;
+        pointer-events: none;
+        transition: background-position 0.8s ease;
+    }
+    .gamer-social-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        border-color: rgba(0, 217, 255, 0.55);
+        background: rgba(0, 217, 255, 0.06);
+        box-shadow:
+            0 8px 24px -4px rgba(0, 217, 255, 0.3),
+            0 0 0 1px rgba(0, 217, 255, 0.25) inset,
+            0 0 18px rgba(0, 217, 255, 0.25);
+    }
+    .gamer-social-btn:hover::before {
+        background-position: -200% 0;
+    }
+    .gamer-social-btn:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    /* Tabs login / register */
+    .gamer-tab {
+        flex: 1;
+        padding: 0.55rem 0.75rem;
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        background: transparent;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.35s var(--ease-smooth);
+        position: relative;
+    }
+    .gamer-tab:hover {
+        color: var(--color-text-light);
+    }
+    .gamer-tab.is-active {
+        color: #050816;
+        background: linear-gradient(135deg, rgba(0, 217, 255, 0.95), rgba(77, 142, 255, 0.95));
+        box-shadow: 0 0 20px rgba(0, 217, 255, 0.45);
+    }
+
+    /* Divider "o continúa con" */
+    .gamer-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--color-text-muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .gamer-divider::before,
+    .gamer-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 217, 255, 0.25),
+            transparent
+        );
+    }
+
+    /* Link "Explorar sin cuenta" */
+    .gamer-link {
+        color: var(--color-text-muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        position: relative;
+        transition: color 0.3s var(--ease-smooth);
+    }
+    .gamer-link::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -3px;
+        width: 0;
+        height: 1px;
+        background: var(--color-neon-cyan);
+        box-shadow: 0 0 8px var(--color-neon-cyan);
+        transition: width 0.35s var(--ease-smooth);
+    }
+    .gamer-link:hover {
+        color: var(--color-neon-cyan);
+    }
+    .gamer-link:hover::after {
+        width: 100%;
+    }
+}
+
+/* ── Accessibility: respect prefers-reduced-motion ──────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .animated-gradient,
+    .cyber-grid,
+    .scan-line,
+    .title-glow,
+    .gamer-btn-primary::before,
+    .gamer-social-btn::before {
+        animation: none !important;
+    }
+    .gamer-input:focus {
+        transform: none;
+    }
+}

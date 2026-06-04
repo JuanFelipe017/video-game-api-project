@@ -1,26 +1,20 @@
-# Autenticación de usuarios: registro y login, con hashing de contraseñas usando bcrypt.
 import bcrypt
 from app.config.database import get_connection
+from app.services.jwt_service import create_access_token
 
-# Servicio de autenticación: registro y login de usuarios, con hashing de contraseñas.
 def _hash_password(password: str) -> str:
-    """Encripta la contraseña con bcrypt."""
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-# Verifica si la contraseña coincide con el hash.
 def _verify_password(plain: str, hashed: str) -> bool:
-    """Verifica si la contraseña coincide con el hash."""
     return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
-# Función de registro, que verifica si el email o username ya existen y devuelve el usuario creado o None.
 def register(username: str, email: str, password: str) -> dict | None:
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # Verificar si el email o username ya existen
         cur.execute("SELECT id FROM users WHERE email=%s OR username=%s", (email, username))
         if cur.fetchone():
-            return None  # Ya existe
+            return None
 
         hashed = _hash_password(password)
         cur.execute(
@@ -29,12 +23,13 @@ def register(username: str, email: str, password: str) -> dict | None:
         )
         user = cur.fetchone()
         conn.commit()
-        return {"id": user[0], "username": user[1], "email": user[2]}
+        user_dict = {"id": user[0], "username": user[1], "email": user[2]}
+        token = create_access_token({"user_id": user[0], "username": user[1], "email": user[2]})
+        return {"access_token": token, "token_type": "bearer", "user": user_dict}
     finally:
         cur.close()
         conn.close()
 
-# Función de login, que verifica credenciales y devuelve el usuario o None.   
 def login(email: str, password: str) -> dict | None:
     conn = get_connection()
     cur = conn.cursor()
@@ -43,12 +38,14 @@ def login(email: str, password: str) -> dict | None:
         user = cur.fetchone()
 
         if not user:
-            return None  # Email no existe
+            return None
 
         if not _verify_password(password, user[3]):
-            return None  # Contraseña incorrecta
+            return None
 
-        return {"id": user[0], "username": user[1], "email": user[2]}
+        user_dict = {"id": user[0], "username": user[1], "email": user[2]}
+        token = create_access_token({"user_id": user[0], "username": user[1], "email": user[2]})
+        return {"access_token": token, "token_type": "bearer", "user": user_dict}
     finally:
         cur.close()
         conn.close()

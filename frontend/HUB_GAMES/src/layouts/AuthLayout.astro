@@ -1,0 +1,53 @@
+---
+/**
+ * AuthLayout.astro
+ * Layout dedicado para pantallas de auth (login/register).
+ * Carga estilos, fuentes, e incluye el fondo animado por defecto.
+ */
+import "../styles/global.css";
+import "../styles/animations.css";
+import BackgroundScene from "../components/Animations/BackgroundScene.astro";
+
+interface Props {
+    title?: string;
+    description?: string;
+    showBackground?: boolean;
+    starCount?: number;
+}
+
+const {
+    title = "HUB GAMES — Iniciar sesión",
+    description = "Accede a tu launcher de juegos personal",
+    showBackground = true,
+    starCount = 180,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={description} />
+        <meta name="theme-color" content="#020113" />
+        <title>{title}</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body class="text-[#e0e8ff] font-body min-h-screen antialiased overflow-x-hidden">
+        <BackgroundScene showBackground={showBackground} starCount={starCount} />
+
+        <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+            <slot />
+        </main>
+
+        <style is:global>
+            html, body { background-color: transparent; }
+        </style>
+    </body>
+</html>

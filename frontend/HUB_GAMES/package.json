@@ -16,12 +16,15 @@
     "@astrojs/react": "^4.4.2",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.4.3",
+    "gsap": "^3.15.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
   }
 }

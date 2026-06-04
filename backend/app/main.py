@@ -18,7 +18,7 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*", "x-user-id"],
+    allow_headers=["*", "Authorization"],
 )
 # Agrega los routers de las rutas de usuarios, favoritos y juegos, con sus respectivos prefijos.
 app.include_router(users.router,     prefix="/api/users")

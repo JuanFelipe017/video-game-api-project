@@ -1,8 +1,19 @@
 ---
-import MainLayout from "../layouts/MainLayout.astro";
+import AuthLayout from "../layouts/AuthLayout.astro";
 import LoginForm from "../components/LoginForm";
 ---
 
-<MainLayout title="Iniciar sesión — HUB GAMES" showChat={false}>
-    <LoginForm client:load />
-</MainLayout>
+<AuthLayout
+    title="Iniciar sesión — HUB GAMES"
+    description="Accede a HUB GAMES y a tu biblioteca de juegos"
+    showBackground={true}
+>
+    <LoginForm client:only="react">
+        <div
+            slot="fallback"
+            style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;"
+        >
+            Cargando…
+        </div>
+    </LoginForm>
+</AuthLayout>
