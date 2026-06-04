@@ -112,7 +112,7 @@ export default function NavBar({ currentPath = '/' }: Props) {
                                 />
                             </button>
                             {avatarOpen && (
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-low border border-outline-variant/15 rounded-xl shadow-2xl shadow-black/50 py-2 z-50">
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-low border border-outline-variant/15 rounded-md shadow-2xl shadow-black/50 py-2 z-50">
                                     <div className="px-4 py-2 border-b border-outline-variant/10">
                                         <p className="text-sm font-medium text-on-surface truncate">{user.username}</p>
                                         <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
