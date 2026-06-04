@@ -1,7 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
 import NavBar from '../../components/NavBar';
-import GameCard from '../../components/GameCard';
 import FavoriteButton from '../../components/FavoriteButton';
 import RelatedGames from '../../components/RelatedGames';
 import type { Game } from '../../types';
@@ -62,7 +61,6 @@ const metacriticColor = game?.metacritic
       background: linear-gradient(90deg, transparent, rgba(173,198,255,0.3), transparent);
     }
 
-    /* corner bracket decoration */
     .bracketed { position: relative; }
     .bracketed::before, .bracketed::after {
       content: '';
@@ -130,25 +128,27 @@ const metacriticColor = game?.metacritic
     .d2 { animation-delay: 0.18s; }
     .d3 { animation-delay: 0.32s; }
     .d4 { animation-delay: 0.46s; }
+
+    .detail-exiting { transition: opacity 0.35s ease, transform 0.35s ease; opacity: 0; transform: translateY(-12px); }
   </style>
 
-  <main class="min-h-screen pb-28" style="background:#0b1326;">
+  <main class="min-h-screen pb-28" data-detail-main>
 
     {error || !game ? (
       <div class="max-w-xl mx-auto px-6 py-40 text-center">
         <span class="material-symbols-outlined text-6xl text-outline mb-4 block">broken_image</span>
         <h1 class="text-2xl font-bold font-headline mb-3">Juego no encontrado</h1>
-        <a href="/" class="text-primary hover:underline">← Volver al inicio</a>
+        <a href="/" data-detail-back class="text-primary hover:underline">← Volver al inicio</a>
       </div>
     ) : (
       <>
-        <!-- ═══════════ HERO ═══════════ -->
         <section class="relative w-full overflow-hidden" style="height: clamp(580px, 82vh, 920px);">
 
           {game.background_image ? (
             <img
               src={game.background_image}
               alt={game.name}
+              data-detail-hero
               class="absolute inset-0 w-full h-full object-cover"
               style="transform:scale(1.07); filter:brightness(0.5) saturate(1.15);"
             />
@@ -156,27 +156,22 @@ const metacriticColor = game?.metacritic
             <div class="absolute inset-0" style="background:linear-gradient(135deg,#060e20,#131b2e);"/>
           )}
 
-          <!-- gradient overlays -->
           <div class="absolute inset-0" style="background:linear-gradient(to top,#0b1326 0%,rgba(11,19,38,0.72) 40%,transparent 100%);"/>
           <div class="absolute inset-0" style="background:linear-gradient(to right,#0b1326 0%,rgba(11,19,38,0.55) 35%,transparent 100%);"/>
           <div class="absolute bottom-0 left-0 right-0 h-40" style="background:linear-gradient(to top,rgba(74,225,118,0.03),transparent);"/>
 
-          <!-- scan line overlay -->
           <div class="absolute inset-0 overflow-hidden" style="opacity:0.25; pointer-events:none;">
             <div class="scan-line"/>
           </div>
 
-          <!-- breadcrumb -->
           <div class="absolute top-28 left-8 fade-up d1" style="font-family:'DM Sans';font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:#424754;">
-            <a href="/" style="color:#8c909f;" class="hover:text-primary transition-colors">Inicio</a>
+            <a href="/" data-detail-back style="color:#8c909f;" class="hover:text-primary transition-colors">Inicio</a>
             <span style="margin:0 8px;color:#2d3449;">/</span>
             <span style="color:#c2c6d6;">{game.name}</span>
           </div>
 
-          <!-- hero content pinned to bottom -->
           <div class="absolute bottom-0 left-0 right-0 px-8 pb-16 max-w-screen-xl mx-auto">
 
-            <!-- status + genre chips -->
             <div class="flex flex-wrap items-center gap-2 mb-5 fade-up d1">
               <div class="flex items-center gap-2 px-3 py-1.5" style="background:rgba(74,225,118,0.07);border:1px solid rgba(74,225,118,0.18);border-radius:2px;">
                 <div class="pulse-dot"/>
@@ -190,19 +185,20 @@ const metacriticColor = game?.metacritic
               )}
             </div>
 
-            <!-- big title -->
             <h1 class="hero-title text-on-surface mb-7 fade-up d2"
                 style="font-size:clamp(3.6rem,9.5vw,9.5rem);">
               {game.name}
             </h1>
 
-            <!-- stats + fav button row -->
             <div class="flex flex-wrap items-end gap-8 fade-up d3">
               {game.rating && (
                 <div class="flex flex-col gap-0.5">
                   <span class="stat-label">Rating</span>
                   <div class="flex items-baseline gap-1">
-                    <span class="stat-value" style="font-size:1.6rem;color:#4ae176;">{game.rating.toFixed(1)}</span>
+                    <span data-detail-counter
+                          data-target={game.rating}
+                          data-precision="2"
+                          class="stat-value" style="font-size:1.6rem;color:#4ae176;">{game.rating.toFixed(2)}</span>
                     <span style="font-family:'DM Sans';font-size:0.72rem;color:#8c909f;">/ 5</span>
                     {game.ratings_count && (
                       <span style="font-family:'DM Sans';font-size:0.65rem;color:#424754;margin-left:3px;">({game.ratings_count.toLocaleString()})</span>
@@ -213,7 +209,10 @@ const metacriticColor = game?.metacritic
               {game.metacritic && (
                 <div class="flex flex-col gap-0.5">
                   <span class="stat-label">Metacritic</span>
-                  <span class="stat-value" style={`font-size:1.6rem;color:${metacriticColor};`}>{game.metacritic}</span>
+                  <span data-detail-counter
+                        data-target={game.metacritic}
+                        data-precision="0"
+                        class="stat-value" style={`font-size:1.6rem;color:${metacriticColor};`}>{game.metacritic}</span>
                 </div>
               )}
               {game.released && (
@@ -227,22 +226,19 @@ const metacriticColor = game?.metacritic
 
               <div style="width:1px;height:40px;background:rgba(66,71,84,0.5);align-self:center;"/>
 
-              <!-- favorite button — GameCard en modo mínimo -->
-            <div class="fade-up d4">
-  <FavoriteButton game={game} client:load />
-</div>
+              <div class="fade-up d4">
+                <FavoriteButton game={game} client:load />
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- ═══════════ BODY ═══════════ -->
         <div class="max-w-screen-xl mx-auto px-8 mt-14 grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-          <!-- main col -->
           <div class="lg:col-span-8 space-y-8">
 
             {game.description && (
-              <div class="dossier-card bracketed rounded-lg p-8">
+              <div class="dossier-card bracketed rounded-lg p-8" data-detail-card>
                 <div class="flex items-center gap-3 mb-6">
                   <span class="material-symbols-outlined" style="font-size:17px;color:#4ae176;">info</span>
                   <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.16em;text-transform:uppercase;font-size:0.68rem;color:#c2c6d6;">Acerca del juego</span>
@@ -256,7 +252,7 @@ const metacriticColor = game?.metacritic
             )}
 
             {game.platforms?.length > 0 && (
-              <div class="dossier-card rounded-lg p-8">
+              <div class="dossier-card rounded-lg p-8" data-detail-card>
                 <div class="flex items-center gap-3 mb-6">
                   <span class="material-symbols-outlined" style="font-size:17px;color:#4ae176;">devices</span>
                   <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.16em;text-transform:uppercase;font-size:0.68rem;color:#c2c6d6;">Plataformas</span>
@@ -272,11 +268,9 @@ const metacriticColor = game?.metacritic
             )}
           </div>
 
-          <!-- sidebar -->
           <aside class="lg:col-span-4 space-y-5">
 
-            <!-- expediente card -->
-            <div class="dossier-card rounded-lg p-6 relative overflow-hidden">
+            <div class="dossier-card rounded-lg p-6 relative overflow-hidden" data-detail-card>
               <div class="scan-line" style="opacity:0.15;"/>
 
               <div class="flex items-center justify-between mb-5">
@@ -287,7 +281,6 @@ const metacriticColor = game?.metacritic
                 </div>
               </div>
 
-              <!-- rating bar -->
               <div style="width:100%;height:2px;background:rgba(66,71,84,0.35);border-radius:99px;margin-bottom:20px;overflow:hidden;">
                 <div style={`height:100%;width:${game.rating ? (game.rating/5*100).toFixed(0) : 60}%;background:linear-gradient(90deg,#4ae176,#adc6ff);border-radius:99px;`}/>
               </div>
@@ -332,9 +325,8 @@ const metacriticColor = game?.metacritic
               )}
             </div>
 
-            <!-- géneros card -->
             {game.genres?.length > 0 && (
-              <div class="dossier-card rounded-lg p-6">
+              <div class="dossier-card rounded-lg p-6" data-detail-card>
                 <span style="font-family:'DM Sans';font-weight:700;letter-spacing:0.2em;text-transform:uppercase;font-size:0.62rem;color:#8c909f;display:block;margin-bottom:12px;">Géneros</span>
                 <div class="flex flex-wrap gap-2">
                   {game.genres.map((g) => (
@@ -347,11 +339,86 @@ const metacriticColor = game?.metacritic
           </aside>
         </div>
 
-        <!-- ═══════════ TAMBIÉN TE PUEDE GUSTAR (isla async) ═══════════ -->
         {game.genres?.[0] && (
           <RelatedGames genre={game.genres[0].name} currentGameId={game.id} client:load />
         )}
       </>
     )}
   </main>
+
+  <script>
+    import gsap from 'gsap';
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const hero = document.querySelector('[data-detail-hero]') as HTMLElement | null;
+    const counters = document.querySelectorAll<HTMLElement>('[data-detail-counter]');
+    const cards = document.querySelectorAll<HTMLElement>('[data-detail-card]');
+    const backLinks = document.querySelectorAll<HTMLAnchorElement>('[data-detail-back]');
+
+    if (!reducedMotion) {
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      if (hero) {
+        gsap.set(hero, { clipPath: 'inset(0 100% 0 0)', scale: 1.07 });
+        tl.to(hero, { clipPath: 'inset(0 0% 0 0)', duration: 1.0, ease: 'power4.inOut' }, 0);
+      }
+
+      counters.forEach((el) => {
+        const target = parseFloat(el.dataset.target ?? '0');
+        const precision = parseInt(el.dataset.precision ?? '0', 10);
+        const obj = { v: 0 };
+        tl.to(obj, {
+          v: target,
+          duration: 0.9,
+          ease: 'power2.out',
+          onUpdate: () => { el.textContent = obj.v.toFixed(precision); },
+        }, 0.35);
+      });
+
+      if (cards.length) {
+        gsap.set(cards, { opacity: 0, y: 24 });
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+              gsap.to(entry.target as HTMLElement, {
+                opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: i * 0.08,
+              });
+              io.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+        cards.forEach((c) => io.observe(c));
+      }
+
+      if (hero) {
+        const updateParallax = () => {
+          const rect = hero.getBoundingClientRect();
+          if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+          const progress = (window.innerHeight - rect.top) / (window.innerHeight + rect.height);
+          const yPercent = gsap.utils.mapRange(0, 1, -8, 8, progress);
+          gsap.to(hero, { yPercent, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+        };
+        window.addEventListener('scroll', updateParallax, { passive: true });
+        updateParallax();
+      }
+    }
+
+    backLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || link.target === '_blank') return;
+        e.preventDefault();
+        const main = document.querySelector('[data-detail-main]') as HTMLElement | null;
+        if (!main || reducedMotion) {
+          window.location.href = href;
+          return;
+        }
+        gsap.to(main, {
+          opacity: 0, y: -16, duration: 0.32, ease: 'power2.in',
+          onComplete: () => { window.location.href = href; },
+        });
+      });
+    });
+  </script>
 </MainLayout>

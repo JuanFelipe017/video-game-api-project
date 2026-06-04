@@ -1,15 +1,18 @@
 ---
 import "../styles/global.css";
 import ChatBot from "../components/ChatBot";
+import BackgroundScene from "../components/Animations/BackgroundScene.astro";
 interface Props {
 	title?: string;
 	description?: string;
 	showChat?: boolean;
+	showBackground?: boolean;
 }
 const {
 	title = "HUB GAMES",
 	description = "Tu launcher de juegos personal",
 	showChat = true,
+	showBackground = true,
 } = Astro.props;
 ---
 
@@ -36,7 +39,12 @@ const {
 	</head>
 
 	<body class="bg-surface text-on-surface font-body min-h-screen antialiased">
-		<slot />
+		<BackgroundScene showBackground={showBackground} />
+
+		<div class="relative z-10 min-h-screen">
+			<slot />
+		</div>
+
 		{showChat && <ChatBot client:load />}
 	</body>
 </html>

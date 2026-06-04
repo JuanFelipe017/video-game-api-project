@@ -3,7 +3,7 @@ import requests
 import os
 
 API_KEY = os.getenv("RAWG_API_KEY") # API KEY de RAWG, que se debe configurar en el .env anteriormente. 
-BASE_URL = "https://api.rawg.io/api" # URL base de la API de RAWG.
+BASE_URL = os.getenv("RAWG_URL_GAMES") # URL base de la API de RAWG.
 
 # Función genérica para hacer llamadas GET a RAWG, que incluye la API key y maneja errores.
 def _get(endpoint: str, params: dict = {}):
