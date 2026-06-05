@@ -79,6 +79,7 @@ A continuación se listan los puntos débiles identificados en el sistema actual
 | 2 | **URLs hardcodeadas en el código fuente** | La URL de RAWG y la URL base del frontend estaban quemadas en el código, dificultando cambiar entornos sin recompilar y exponiendo endpoints en el repositorio. | **Mitigado** — movidas a variables de entorno (`RAWG_URL_GAMES`, `PUBLIC_API_URL`) |
 | 3 | **Sin rate limiting en endpoints de autenticación** | Los endpoints `/api/users/login` y `/api/users/register` no tienen protección contra ataques de fuerza bruta ni diccionario. | **Pendiente** — requiere implementación a nivel de aplicación o infraestructura |
 | 4 | **Sin Content Security Policy (CSP) configurada** | No hay cabeceras CSP estrictas. Astro 6 ofrece API para configurarlas, pero no se ha implementado una política que restrinja orígenes de scripts y estilos. | **Pendiente** — riesgo de bloquear recursos legítimos (RAWG images, Groq API); requiere testing exhaustivo |
+| 5 | **API Key de Groq expuesta en variables de entorno del servidor** | Si el servidor es comprometido, la clave de Groq podría ser exfiltrada y usada para consumir créditos del equipo. | **Mitigado parcialmente** — almacenada en `.env` excluido del repositorio vía `.gitignore`; pendiente rotación periódica |
 
 ### Medidas implementadas
 
@@ -99,6 +100,7 @@ A continuación se listan los puntos débiles identificados en el sistema actual
 | **CSP headers estrictos** | Media | Riesgo de bloquear recursos legítimos (imágenes de RAWG, llamadas a Groq API). Requiere un inventario completo de todos los orígenes externos y testing en staging antes de desplegar a producción. |
 | **Integración OAuth (Google/Apple)** | Baja | Depende de registrarse en consolas de desarrollador de Google y Apple. La UI ya tiene los botones sociales, pero la integración real requiere credenciales y endpoints de callback. |
 | **Verificación de propiedad en favoritos** | Baja | El middleware JWT ya autentica al usuario, pero los endpoints de favoritos no verifican que el `user_id` del recurso coincida con el `user_id` del token. Un usuario podría modificar favoritos de otro si conoce su ID. |
+| **Rotación periódica de API Keys** | Baja | Las claves de Groq y RAWG no tienen fecha de expiración automática. Se recomienda rotarlas cada 90 días o ante cualquier sospecha de compromiso. |
 
 ### Plan de respuesta a incidentes
 
