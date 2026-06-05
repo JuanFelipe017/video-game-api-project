@@ -1,0 +1,419 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "uid": "gamehub-blackbox",
+  "title": "GameHub API — Blackbox Monitoring",
+  "tags": ["gamehub", "blackbox", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "15s",
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "constant",
+        "label": "Job",
+        "query": "blackbox_api",
+        "current": { "text": "blackbox_api", "value": "blackbox_api" },
+        "options": [{ "text": "blackbox_api", "value": "blackbox_api", "selected": true }]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "title": "🌐 BLACK-BOX MONITORING — probes desde afuera, sin tocar la API",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "Disponibilidad global",
+      "description": "% de endpoints respondiendo correctamente (status 2xx o 4xx permitido) en los últimos 5 min.",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "avg(avg_over_time(probe_success{job=~\"$job\"}[5m]))",
+        "legendFormat": "Uptime"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "decimals": 2, "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": null }, { "color": "yellow", "value": 0.95 }, { "color": "green", "value": 0.99 }
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background", "graphMode": "area", "textMode": "auto", "justifyMode": "center"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Endpoints caídos",
+      "description": "Cantidad de endpoints con probe fallido (status 5xx, timeout o error de red) en el último scrape.",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "count(probe_success{job=~\"$job\"} == 0) or vector(0)",
+        "legendFormat": "Caídos"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background", "graphMode": "none", "textMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Latencia p95",
+      "description": "Percentil 95 del tiempo de respuesta de los probes (5 min).",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "quantile_over_time(0.95, probe_duration_seconds{job=~\"$job\"}[5m])",
+        "legendFormat": "p95"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "decimals": 3,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.5 }
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background", "graphMode": "area", "textMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Probes ejecutados (5m)",
+      "description": "Cantidad total de probes ejecutados en los últimos 5 min. ~72 con scrape_interval=5s × 6 endpoints.",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum(count_over_time(probe_success{job=~\"$job\"}[5m]))",
+        "legendFormat": "Probes"
+      }],
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value", "graphMode": "none", "textMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Estado UP/DOWN por endpoint",
+      "description": "Timeline: verde = UP, rojo = DOWN. Cada fila es un endpoint.",
+      "type": "state-timeline",
+      "gridPos": { "x": 0, "y": 5, "w": 18, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "min by (instance) (probe_success{job=~\"$job\"})",
+        "legendFormat": "{{instance}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "min": 0, "max": 1,
+          "custom": { "lineWidth": 1, "fillOpacity": 80, "showPoints": "never", "spanNulls": false },
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": null }, { "color": "green", "value": 1 }
+          ]}
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right", "calcs": ["lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Uptime % (última hora)",
+      "description": "% de tiempo que la API estuvo UP en la última hora.",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 5, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "avg(avg_over_time(probe_success{job=~\"$job\"}[1h]))",
+        "legendFormat": "Uptime 1h"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "decimals": 3, "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": null }, { "color": "yellow", "value": 0.99 }, { "color": "green", "value": 0.999 }
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background", "graphMode": "area", "textMode": "auto", "justifyMode": "center"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Latencia del probe por endpoint",
+      "description": "Tiempo de respuesta de cada probe (avg + max). Cada par de líneas es un endpoint.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 13, "w": 16, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "avg by (instance) (probe_duration_seconds{job=~\"$job\"})",
+          "legendFormat": "avg — {{instance}}" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "max by (instance) (probe_duration_seconds{job=~\"$job\"})",
+          "legendFormat": "max — {{instance}}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5, "showPoints": "never" },
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Status code actual por endpoint",
+      "description": "Último HTTP code que devolvió cada endpoint. 🟢=2xx, 🟡=4xx, 🔴=5xx.",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 13, "w": 8, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "probe_http_status_code{job=~\"$job\"}",
+        "legendFormat": "{{instance}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "yellow", "value": 400 }, { "color": "red", "value": 500 }
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background", "graphMode": "none", "textMode": "value_and_name",
+        "orientation": "horizontal", "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Endpoints con error (último scrape)",
+      "description": "Endpoints cuyo último probe NO fue exitoso. El 4xx se considera éxito porque está en valid_status_codes. Idealmente vacío.",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum by (instance) ((1 - probe_success) > 0)",
+        "legendFormat": "{{instance}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "red", "value": 1 }
+          ]}
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background", "graphMode": "none", "textMode": "value_and_name",
+        "orientation": "horizontal", "justifyMode": "center"
+      }
+    },
+    {
+      "id": 9,
+      "title": "Cambios de estado (caídas/recuperaciones, 5m)",
+      "description": "Cantidad de veces que cada endpoint cambió de UP→DOWN o DOWN→UP en los últimos 5 min. Sirve para detectar flapping.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum by (instance) (changes(probe_success{job=~\"$job\"}[5m]))",
+        "legendFormat": "{{instance}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 30, "showPoints": "always" },
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      }
+    },
+    {
+      "id": 101,
+      "title": "📊 WHITE-BOX MONITORING — tráfico real, instrumentado dentro de la API",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "title": "Throughput real (RPS)",
+      "description": "Requests por segundo por endpoint, contadas desde dentro de la API vía /metrics.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 31, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum by (handler) (rate(http_requests_total{handler!~\"/metrics|none\"}[1m]))",
+        "legendFormat": "{{handler}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "stacking": { "mode": "normal", "group": "A" } },
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Latencia p95 por endpoint",
+      "description": "Percentil 95 calculado desde el histograma real. Una línea por endpoint, agrupadas por p50/p95/p99.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 31, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.50, sum by (handler, le) (rate(http_request_duration_seconds_bucket{handler!~\"/metrics|none\"}[5m])))",
+          "legendFormat": "p50 — {{handler}}" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{handler!~\"/metrics|none\"}[5m])))",
+          "legendFormat": "p95 — {{handler}}" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, sum by (handler, le) (rate(http_request_duration_seconds_bucket{handler!~\"/metrics|none\"}[5m])))",
+          "legendFormat": "p99 — {{handler}}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never" },
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Requests en curso",
+      "description": "Requests siendo procesados AHORA. Gauge: si no hay tráfico, muestra 0.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 39, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum(http_requests_in_progress) or vector(0)",
+        "legendFormat": "En curso"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short", "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 30, "showPoints": "always", "pointSize": 4 },
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }
+          ]}
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Status codes por endpoint (whitebox)",
+      "description": "Rate desglosado por código HTTP y endpoint. 🟢=2xx, 🟡=4xx, 🔴=5xx.",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 39, "w": 16, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum by (handler, status) (rate(http_requests_total{handler!~\"/metrics|none\"}[5m]))",
+        "legendFormat": "{{handler}} — {{status}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "showPoints": "never" },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*5xx.*" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*4xx.*" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*2xx.*" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    }
+  ]
+}

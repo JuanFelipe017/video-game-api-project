@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'blackbox_api'
+    metrics_path: /probe
+    scrape_interval: 5s
+    params:
+      module: [http_gamehub_api]
+    static_configs:
+      - targets:
+          - ${API_SCHEME}://${API_HOST}/
+          - ${API_SCHEME}://${API_HOST}/api/games/
+          - ${API_SCHEME}://${API_HOST}/api/games/1
+          - ${API_SCHEME}://${API_HOST}/api/games/new-releases
+          - ${API_SCHEME}://${API_HOST}/api/games/?page=1&page_size=10
+          - ${API_SCHEME}://${API_HOST}/api/users/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
+  # White-box: scrapea el endpoint /metrics que expone la API vía
+  # prometheus-fastapi-instrumentator. Complementa el black-box de arriba.
+  # Usa ${API_SCHEME} y ${API_HOST} (parseados de API_TARGET en el entrypoint)
+  # para funcionar tanto en local (http://localhost:8000) como en prod
+  # (https://gamehub-backend-...run.app).
+  - job_name: 'gamehub_api'
+    scheme: ${API_SCHEME}
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['${API_HOST}']
