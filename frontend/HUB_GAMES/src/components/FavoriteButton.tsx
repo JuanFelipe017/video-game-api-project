@@ -1,16 +1,45 @@
-import { useState } from 'react';
-import type { Game } from '../types';
+import { useState, useEffect } from 'react';
+import type { Game, FavoriteOut } from '../types';
 import { getUser } from '../lib/auth';
-import { addFavorite, removeFavorite } from '../lib/api';
+import { addFavorite, removeFavorite, getFavorites } from '../lib/api';
+import { get as cacheGet, set as cacheSet } from '../lib/cache';
 
 interface Props {
     game: Game;
     isFavorite?: boolean;
 }
 
-export default function FavoriteButton({ game, isFavorite = false }: Props) {
-    const [fav, setFav] = useState(isFavorite);
+const FAV_CACHE_TTL_MS = 30_000;
+
+export default function FavoriteButton({ game, isFavorite }: Props) {
+    const [fav, setFav] = useState<boolean>(isFavorite ?? false);
     const [loading, setLoading] = useState(false);
+    const [checking, setChecking] = useState(isFavorite === undefined);
+
+    useEffect(() => {
+        if (isFavorite !== undefined) {
+            setChecking(false);
+            return;
+        }
+        const user = getUser();
+        if (!user) { setChecking(false); return; }
+
+        const cacheKey = `favorites:${user.id}`;
+        const cached = cacheGet<FavoriteOut[]>(cacheKey);
+        if (cached) {
+            setFav(cached.some((f) => f.game_id === game.id));
+            setChecking(false);
+            return;
+        }
+
+        getFavorites(user.id)
+            .then((favs) => {
+                cacheSet(cacheKey, favs, FAV_CACHE_TTL_MS);
+                setFav(favs.some((f) => f.game_id === game.id));
+            })
+            .catch(() => {})
+            .finally(() => setChecking(false));
+    }, [game.id, isFavorite]);
 
     const toggle = async () => {
         const user = getUser();
@@ -24,6 +53,12 @@ export default function FavoriteButton({ game, isFavorite = false }: Props) {
                 await addFavorite(user.id, game.id);
                 setFav(true);
             }
+            const cacheKey = `favorites:${user.id}`;
+            const current = cacheGet<FavoriteOut[]>(cacheKey) ?? [];
+            const next = fav
+                ? current.filter((f) => f.game_id !== game.id)
+                : [...current.filter((f) => f.game_id !== game.id), { id: 0, user_id: user.id, game_id: game.id }];
+            cacheSet(cacheKey, next, FAV_CACHE_TTL_MS);
         } catch (err: any) {
             if (err?.message?.includes('401')) window.location.href = '/login';
         } finally {
@@ -34,7 +69,7 @@ export default function FavoriteButton({ game, isFavorite = false }: Props) {
     return (
         <button
             onClick={toggle}
-            disabled={loading}
+            disabled={loading || checking}
             style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -44,8 +79,8 @@ export default function FavoriteButton({ game, isFavorite = false }: Props) {
                 border: fav ? '1px solid rgba(74,225,118,0.5)' : '1px solid rgba(66,71,84,0.5)',
                 background: fav ? 'rgba(74,225,118,0.1)' : 'rgba(23,31,51,0.8)',
                 backdropFilter: 'blur(12px)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
+                cursor: loading || checking ? 'not-allowed' : 'pointer',
+                opacity: loading || checking ? 0.6 : 1,
                 transition: 'all 0.2s',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '0.78rem',
@@ -66,7 +101,7 @@ export default function FavoriteButton({ game, isFavorite = false }: Props) {
             >
                 favorite
             </span>
-            {loading ? 'Cargando...' : fav ? 'En favoritos' : 'Añadir a favoritos'}
+            {loading ? 'Cargando...' : checking ? 'Cargando...' : fav ? 'En favoritos' : 'Añadir a favoritos'}
         </button>
     );
 }

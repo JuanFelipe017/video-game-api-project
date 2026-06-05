@@ -26,6 +26,11 @@ app.include_router(favorites.router, prefix="/api/favorites")
 app.include_router(games.router,     prefix="/api/games")
 app.include_router(chatbot.router, prefix="/api/chat")
 
+# Instrumentación de Prometheus: expone /metrics con métricas white-box
+# (http_requests_total, http_request_duration_seconds, http_requests_in_progress, etc.)
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
 # Ruta raíz para verificar que la API está corriendo, devuelve un mensaje simple.
 @app.get("/")
 def root():

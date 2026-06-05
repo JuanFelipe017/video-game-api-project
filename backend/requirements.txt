@@ -9,3 +9,4 @@ python-dotenv==1.2.2
 requests==2.34.2
 bcrypt==5.0.0
 PyJWT>=2.13.0
+prometheus-fastapi-instrumentator>=5.0.0

@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import type { Game } from '../types';
+import { useState, useEffect } from 'react';
+import type { Game, FavoriteOut } from '../types';
 import { getUser } from '../lib/auth';
-import { addFavorite, removeFavorite } from '../lib/api';
+import { addFavorite, removeFavorite, getFavorites } from '../lib/api';
+import { get as cacheGet, set as cacheSet } from '../lib/cache';
 
 interface Props {
     game: Game;
@@ -10,9 +11,31 @@ interface Props {
     size?: 'normal' | 'large';
 }
 
-export default function GameCard({ game, isFavorite = false, onFavoriteChange, size = 'normal' }: Props) {
-    const [fav, setFav] = useState(isFavorite);
+const FAV_CACHE_TTL_MS = 30_000;
+
+export default function GameCard({ game, isFavorite, onFavoriteChange, size = 'normal' }: Props) {
+    const [fav, setFav] = useState<boolean>(isFavorite ?? false);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isFavorite !== undefined) return;
+        const user = getUser();
+        if (!user) return;
+
+        const cacheKey = `favorites:${user.id}`;
+        const cached = cacheGet<FavoriteOut[]>(cacheKey);
+        if (cached) {
+            setFav(cached.some((f) => f.game_id === game.id));
+            return;
+        }
+
+        getFavorites(user.id)
+            .then((favs) => {
+                cacheSet(cacheKey, favs, FAV_CACHE_TTL_MS);
+                setFav(favs.some((f) => f.game_id === game.id));
+            })
+            .catch(() => {});
+    }, [game.id, isFavorite]);
 
     const toggleFav = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -33,11 +56,15 @@ export default function GameCard({ game, isFavorite = false, onFavoriteChange, s
                 setFav(true);
                 onFavoriteChange?.(game.id, true);
             }
+            const cacheKey = `favorites:${user.id}`;
+            const current = cacheGet<FavoriteOut[]>(cacheKey) ?? [];
+            const next = fav
+                ? current.filter((f) => f.game_id !== game.id)
+                : [...current.filter((f) => f.game_id !== game.id), { id: 0, user_id: user.id, game_id: game.id }];
+            cacheSet(cacheKey, next, FAV_CACHE_TTL_MS);
         } catch (err: any) {
-            // Mostrar el mensaje real del backend en consola
             const msg = err?.message ?? String(err);
             console.error('Error favorito:', msg);
-            // Si es 401 la sesión expiró
             if (msg.includes('401') || msg.toLowerCase().includes('autenticaci')) {
                 window.location.href = '/login';
             }

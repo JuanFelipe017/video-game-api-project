@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -6,6 +7,9 @@ interface Message {
     role: 'user' | 'assistant';
     content: string;
 }
+
+const CHAT_STORAGE_KEY = 'gamehub_chat_history';
+const BUBBLE_SHOWN_KEY = 'gamehub_bubble_shown_session';
 
 export default function ChatBot() {
     const [isOpen, setIsOpen] = useState(false);
@@ -16,13 +20,56 @@ export default function ChatBot() {
     const [loading, setLoading] = useState(false);
     const [showBubble, setShowBubble] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    // Inicializar: cargar historial y verificar si el bubble ya se mostró
+    useEffect(() => {
+        // Cargar mensajes desde sessionStorage
+        const savedMessages = sessionStorage.getItem(CHAT_STORAGE_KEY);
+        if (savedMessages) {
+            try {
+                setMessages(JSON.parse(savedMessages));
+            } catch {
+                setMessages([
+                    { role: 'assistant', content: '¡Hola! Soy GameBot 🎮 ¿No sabes qué jugar? ¡Cuéntame qué tipo de juego te gusta y te recomiendo algo!' }
+                ]);
+            }
+        }
+
+        // Verificar si el bubble ya se mostró en esta sesión
+        const bubbleShown = sessionStorage.getItem(BUBBLE_SHOWN_KEY);
+        if (bubbleShown === 'true') {
+            setShowBubble(false);
+        } else {
+            setShowBubble(true);
+        }
+
+        setIsInitialized(true);
+    }, []);
+
+    // Guardar historial en sessionStorage cuando cambia
+    useEffect(() => {
+        if (isInitialized && messages.length > 1) {
+            sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+        }
+    }, [messages, isInitialized]);
 
     useEffect(() => {
         if (isOpen) {
             setShowBubble(false);
+            // Marcar que el bubble ya se mostró en esta sesión
+            sessionStorage.setItem(BUBBLE_SHOWN_KEY, 'true');
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [isOpen, messages]);
+    }, [isOpen]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     const sendMessage = async () => {
         if (!input.trim() || loading) return;
@@ -47,11 +94,18 @@ export default function ChatBot() {
 
             const data = await response.json();
             setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+            // Restaurar el focus al input después de la respuesta
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
         } catch {
             setMessages([...newMessages, {
                 role: 'assistant',
                 content: 'Ups, tuve un problema conectándome. ¿Puedes intentarlo de nuevo?'
             }]);
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
         } finally {
             setLoading(false);
         }
@@ -134,7 +188,22 @@ export default function ChatBot() {
                                         color: 'var(--md-sys-color-on-surface, #e2e8f0)',
                                     }}
                                 >
-                                    {msg.content}
+                                    {msg.role === 'assistant' ? (
+                                        <ReactMarkdown
+                                            components={{
+                                                strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                                                em: ({node, ...props}) => <em className="italic" {...props} />,
+                                                p: ({node, ...props}) => <p {...props} />,
+                                                ul: ({node, ...props}) => <ul className="list-disc list-inside" {...props} />,
+                                                ol: ({node, ...props}) => <ol className="list-decimal list-inside" {...props} />,
+                                                li: ({node, ...props}) => <li {...props} />,
+                                            }}
+                                        >
+                                            {msg.content}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        msg.content
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -166,6 +235,7 @@ export default function ChatBot() {
                         style={{ borderTop: '1px solid rgba(173,198,255,0.1)' }}
                     >
                         <input
+                            ref={inputRef}
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}

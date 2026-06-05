@@ -1,0 +1,7 @@
+.env
+.env.local
+.env.prod
+prometheus_data/
+grafana_data/
+*.log
+.DS_Store
